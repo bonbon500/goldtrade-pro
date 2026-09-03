@@ -43,8 +43,8 @@ export const LiveRatesModal: React.FC<LiveRatesModalProps> = ({
 
   if (!isOpen) return null;
 
-  const effectiveUsdIls = customUsdIls ?? (rates?.usdIls || 3.65);
-  const xauUsd = customXauUsd ?? (rates?.xauUsd || 3310.5);
+  const effectiveUsdIls = customUsdIls ?? (rates?.usdIls || 3.005);
+  const xauUsd = customXauUsd ?? (rates?.xauUsd || 4492.89);
   const effectiveGold24kGramIls = (xauUsd / 31.1034768) * effectiveUsdIls;
 
   const handleSaveCustomFx = () => {

@@ -70,19 +70,35 @@ export async function fetchLiveGoldAndFxRates(): Promise<LiveGoldFxRates> {
     }
   }
 
-  // 3. משיכת שער זהב חי (Gold-API / Yahoo Finance GC=F / CORS Proxy)
+  // 3. משיכת שער ספוט זהב חי (XAU/USD - ללא חוזים עתידיים!)
   if (!goldOunceUSD) {
     try {
-      const yGoldRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d');
-      if (yGoldRes.ok) {
-        const yGoldData = await yGoldRes.json();
-        const price = yGoldData?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (price && typeof price === 'number') {
-          goldOunceUSD = Number(price);
+      const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot');
+      if (cbRes.ok) {
+        const cbData = await cbRes.json();
+        if (cbData?.data?.amount) {
+          goldOunceUSD = Number(parseFloat(cbData.data.amount).toFixed(2));
+          goldSource = 'Investing.com / Coinbase ספוט זהב (XAU/USD)';
         }
       }
     } catch {
-      // המשך ל-Gold API
+      // המשך לגיבוי הבא
+    }
+  }
+
+  if (!goldOunceUSD) {
+    try {
+      const krRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD');
+      if (krRes.ok) {
+        const krData = await krRes.json();
+        const price = krData?.result?.PAXGUSD?.c?.[0];
+        if (price) {
+          goldOunceUSD = Number(parseFloat(price).toFixed(2));
+          goldSource = 'Kraken ספוט זהב (XAU/USD)';
+        }
+      }
+    } catch {
+      // המשך
     }
   }
 

@@ -168,24 +168,23 @@ app.get('/api/rates', async (req, res) => {
       }
     }
 
-    // Fallback C: Yahoo Finance GC=F (COMEX Active Gold)
+    // Fallback C: Kraken PAXG (1:1 Physical Gold Spot)
     if (!goldFetched) {
       try {
-        const yGoldRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d', {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
+        const krakenRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD', {
           signal: AbortSignal.timeout(3000)
         });
-        if (yGoldRes.ok) {
-          const yGoldData = await yGoldRes.json();
-          const price = yGoldData?.chart?.result?.[0]?.meta?.regularMarketPrice;
-          if (price && typeof price === 'number') {
-            xauUsd = Number(price.toFixed(2));
-            sourceGold = 'COMEX Gold Futures';
+        if (krakenRes.ok) {
+          const krakenData = await krakenRes.json();
+          const price = krakenData?.result?.PAXGUSD?.c?.[0];
+          if (price) {
+            xauUsd = parseFloat(price);
+            sourceGold = 'Kraken Spot Gold (XAU/USD)';
             goldFetched = true;
           }
         }
       } catch (e) {
-        console.warn('Yahoo Finance Gold GC=F fetch failed:', e);
+        console.warn('Kraken PAXG gold fetch failed:', e);
       }
     }
 

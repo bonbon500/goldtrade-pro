@@ -130,8 +130,8 @@ export default function App() {
   };
 
   // Compute effective rates incorporating user custom overrides
-  const effectiveUsdIls = customUsdIls ?? rates?.usdIls ?? 3.65;
-  const effectiveXauUsd = customXauUsd ?? rates?.xauUsd ?? 3310.50;
+  const effectiveUsdIls = customUsdIls ?? rates?.usdIls ?? 3.005;
+  const effectiveXauUsd = customXauUsd ?? rates?.xauUsd ?? 4492.89;
   const effectiveGold24kUsd = effectiveXauUsd / 31.1034768;
   const effectiveGold24kIls = effectiveGold24kUsd * effectiveUsdIls;
 
