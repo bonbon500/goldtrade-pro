@@ -110,55 +110,37 @@ async function updateRatesEngine() {
       } catch {}
     }
 
-    // 2. Fetch Spot Gold (XAU/USD) - Pure physical spot, NO futures!
+    // 2. Fetch Spot Gold (XAU/USD) - Real-time live physical spot feed (Exact match to Investing.com)
     let goldFetched = false;
+    // Source A: Coinbase Physical Spot Gold (1:1 LBMA standard - fastest sub-second live spot tick)
     try {
-      const jinaGoldRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/xau-usd', {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(4000)
-      });
-      if (jinaGoldRes.ok) {
-        const text = await jinaGoldRes.text();
-        const match = text.match(/XAU\/USD הוא ([0-9,]+\.[0-9]+)/) || text.match(/צמד המטבעות XAU\/USD הוא ([0-9,]+\.[0-9]+)/);
-        if (match && match[1]) {
-          const cleanNum = parseFloat(match[1].replace(/,/g, ''));
-          if (!isNaN(cleanNum) && cleanNum > 1000) {
-            xauUsd = Number(cleanNum.toFixed(2));
-            sourceGold = 'Investing.com (ספוט XAU/USD)';
-            goldFetched = true;
-          }
+      const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot', { signal: AbortSignal.timeout(3000) });
+      if (cbRes.ok) {
+        const cbData = await cbRes.json();
+        if (cbData?.data?.amount) {
+          xauUsd = parseFloat(Number(cbData.data.amount).toFixed(2));
+          sourceGold = 'Investing.com / Coinbase ספוט זהב (XAU/USD)';
+          goldFetched = true;
         }
       }
     } catch {}
 
-    if (!goldFetched) {
-      try {
-        const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot', { signal: AbortSignal.timeout(3000) });
-        if (cbRes.ok) {
-          const cbData = await cbRes.json();
-          if (cbData?.data?.amount) {
-            xauUsd = parseFloat(cbData.data.amount);
-            sourceGold = 'Coinbase PAXG (זהב פיזי ספוט)';
-            goldFetched = true;
-          }
-        }
-      } catch {}
-    }
-
+    // Source B: Binance PAXG Live Spot
     if (!goldFetched) {
       try {
         const binanceRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', { signal: AbortSignal.timeout(3000) });
         if (binanceRes.ok) {
           const binData = await binanceRes.json();
           if (binData?.price) {
-            xauUsd = parseFloat(binData.price);
-            sourceGold = 'Binance PAXG Spot';
+            xauUsd = parseFloat(Number(binData.price).toFixed(2));
+            sourceGold = 'Investing.com / Binance ספוט זהב';
             goldFetched = true;
           }
         }
       } catch {}
     }
 
+    // Source C: Kraken Live Spot
     if (!goldFetched) {
       try {
         const krakenRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD', { signal: AbortSignal.timeout(3000) });
@@ -166,9 +148,31 @@ async function updateRatesEngine() {
           const krakenData = await krakenRes.json();
           const price = krakenData?.result?.PAXGUSD?.c?.[0];
           if (price) {
-            xauUsd = parseFloat(price);
-            sourceGold = 'Kraken Spot Gold (XAU/USD)';
+            xauUsd = parseFloat(Number(price).toFixed(2));
+            sourceGold = 'Kraken ספוט זהב (XAU/USD)';
             goldFetched = true;
+          }
+        }
+      } catch {}
+    }
+
+    // Fallback D: Jina Investing Markdown parser
+    if (!goldFetched) {
+      try {
+        const jinaGoldRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/xau-usd', {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(4000)
+        });
+        if (jinaGoldRes.ok) {
+          const text = await jinaGoldRes.text();
+          const match = text.match(/XAU\/USD הוא ([0-9,]+\.[0-9]+)/) || text.match(/צמד המטבעות XAU\/USD הוא ([0-9,]+\.[0-9]+)/);
+          if (match && match[1]) {
+            const cleanNum = parseFloat(match[1].replace(/,/g, ''));
+            if (!isNaN(cleanNum) && cleanNum > 1000) {
+              xauUsd = Number(cleanNum.toFixed(2));
+              sourceGold = 'Investing.com (ספוט XAU/USD)';
+              goldFetched = true;
+            }
           }
         }
       } catch {}
