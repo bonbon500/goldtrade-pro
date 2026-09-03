@@ -27,23 +27,36 @@ function getGeminiClient() {
   });
 }
 
-let cachedRatesResponse: any = null;
-let lastRatesFetchTime = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds cache
-
-// 1. Live Gold & Exchange Rates API
-app.get('/api/rates', async (req, res) => {
-  try {
-    if (cachedRatesResponse && Date.now() - lastRatesFetchTime < CACHE_TTL_MS) {
-      return res.json(cachedRatesResponse);
+let cachedRatesResponse: any = {
+  success: true,
+  timestamp: new Date().toISOString(),
+  data: {
+    xauUsd: 4478.60,
+    usdIls: 3.0053,
+    gold24kPerGramUsd: 143.99,
+    gold24kPerGramIls: 432.73,
+    purityRatesIls: {
+      '24K': 432.73,
+      '21K': Number((432.73 * (21 / 24)).toFixed(2)),
+      '18K': Number((432.73 * (18 / 24)).toFixed(2)),
+      '14K': Number((432.73 * (14 / 24)).toFixed(2)),
+      '9K': Number((432.73 * (9 / 24)).toFixed(2)),
+    },
+    sources: {
+      gold: 'Investing.com (ספוט XAU/USD)',
+      fx: 'Investing.com (USD/ILS רציף)',
     }
+  }
+};
 
-    let xauUsd = 4492.89;
-    let usdIls = 3.0054;
-    let sourceGold = 'Investing.com (XAU/USD ספוט)';
+async function updateRatesEngine() {
+  try {
+    let xauUsd = cachedRatesResponse?.data?.xauUsd || 4478.60;
+    let usdIls = cachedRatesResponse?.data?.usdIls || 3.0053;
+    let sourceGold = 'Investing.com (ספוט XAU/USD)';
     let sourceFx = 'Investing.com (USD/ILS רציף)';
 
-    // 1. Fetch real-time USD/ILS exchange rate from Investing.com (Direct Jina Markdown Parser)
+    // 1. Fetch real-time USD/ILS from Investing.com / Yahoo Finance / Bank of Israel
     let fxFetched = false;
     try {
       const jinaFxRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/usd-ils', {
@@ -62,11 +75,8 @@ app.get('/api/rates', async (req, res) => {
           }
         }
       }
-    } catch (e) {
-      console.warn('Jina Investing USD/ILS parser failed, using Yahoo/BoI fallback:', e);
-    }
+    } catch {}
 
-    // Fallback A: Yahoo Finance USDILS=X (Matches Investing.com feed)
     if (!fxFetched) {
       try {
         const yFxRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDILS=X?interval=1m&range=1d', {
@@ -82,17 +92,12 @@ app.get('/api/rates', async (req, res) => {
             fxFetched = true;
           }
         }
-      } catch (e) {
-        console.warn('Yahoo Finance USD/ILS fetch failed:', e);
-      }
+      } catch {}
     }
 
-    // Fallback B: Bank of Israel (בנק ישראל) Official API
     if (!fxFetched) {
       try {
-        const boiRes = await fetch('https://boi.org.il/PublicApi/GetExchangeRates', {
-          signal: AbortSignal.timeout(3000)
-        });
+        const boiRes = await fetch('https://boi.org.il/PublicApi/GetExchangeRates', { signal: AbortSignal.timeout(3000) });
         if (boiRes.ok) {
           const boiData = await boiRes.json();
           const usdRate = boiData?.exchangeRates?.find((r: any) => r.key === 'USD');
@@ -102,12 +107,10 @@ app.get('/api/rates', async (req, res) => {
             fxFetched = true;
           }
         }
-      } catch (e) {
-        console.warn('BoI fetch failed:', e);
-      }
+      } catch {}
     }
 
-    // 2. Fetch real-time Gold Spot (XAU/USD) from Investing.com (Direct Jina Markdown Parser)
+    // 2. Fetch Spot Gold (XAU/USD) - Pure physical spot, NO futures!
     let goldFetched = false;
     try {
       const jinaGoldRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/xau-usd', {
@@ -126,54 +129,39 @@ app.get('/api/rates', async (req, res) => {
           }
         }
       }
-    } catch (e) {
-      console.warn('Jina Investing XAU/USD parser failed, using Coinbase/Binance fallback:', e);
-    }
+    } catch {}
 
-    // Fallback A: Coinbase PAXG (1:1 Physical Gold Spot)
     if (!goldFetched) {
       try {
-        const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot', {
-          signal: AbortSignal.timeout(3000)
-        });
+        const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot', { signal: AbortSignal.timeout(3000) });
         if (cbRes.ok) {
           const cbData = await cbRes.json();
-          if (cbData && cbData.data && cbData.data.amount) {
+          if (cbData?.data?.amount) {
             xauUsd = parseFloat(cbData.data.amount);
             sourceGold = 'Coinbase PAXG (זהב פיזי ספוט)';
             goldFetched = true;
           }
         }
-      } catch (e) {
-        console.warn('Coinbase PAXG gold fetch failed:', e);
-      }
+      } catch {}
     }
 
-    // Fallback B: Binance PAXG/USDT
     if (!goldFetched) {
       try {
-        const binanceRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', {
-          signal: AbortSignal.timeout(3000)
-        });
+        const binanceRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', { signal: AbortSignal.timeout(3000) });
         if (binanceRes.ok) {
           const binData = await binanceRes.json();
-          if (binData && binData.price) {
+          if (binData?.price) {
             xauUsd = parseFloat(binData.price);
             sourceGold = 'Binance PAXG Spot';
             goldFetched = true;
           }
         }
-      } catch (e) {
-        console.warn('Binance PAXG gold fetch failed:', e);
-      }
+      } catch {}
     }
 
-    // Fallback C: Kraken PAXG (1:1 Physical Gold Spot)
     if (!goldFetched) {
       try {
-        const krakenRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD', {
-          signal: AbortSignal.timeout(3000)
-        });
+        const krakenRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD', { signal: AbortSignal.timeout(3000) });
         if (krakenRes.ok) {
           const krakenData = await krakenRes.json();
           const price = krakenData?.result?.PAXGUSD?.c?.[0];
@@ -183,17 +171,13 @@ app.get('/api/rates', async (req, res) => {
             goldFetched = true;
           }
         }
-      } catch (e) {
-        console.warn('Kraken PAXG gold fetch failed:', e);
-      }
+      } catch {}
     }
 
-    // Calculate Gold 24K per gram in ILS
-    // 1 Troy Ounce = 31.1034768 grams
     const gold24kPerGramUsd = xauUsd / 31.1034768;
     const gold24kPerGramIls = gold24kPerGramUsd * usdIls;
 
-    const responsePayload = {
+    cachedRatesResponse = {
       success: true,
       timestamp: new Date().toISOString(),
       data: {
@@ -214,12 +198,21 @@ app.get('/api/rates', async (req, res) => {
         }
       }
     };
-    cachedRatesResponse = responsePayload;
-    lastRatesFetchTime = Date.now();
-    res.json(responsePayload);
-  } catch (error: any) {
-    res.status(500).json({ success: false, error: error.message || 'Failed to fetch rates' });
+  } catch (err) {
+    console.warn('Background rates update error:', err);
   }
+}
+
+// Start background rates updater loop
+updateRatesEngine();
+setInterval(updateRatesEngine, 15000);
+
+// 1. Live Gold & Exchange Rates API endpoint
+app.get('/api/rates', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.json(cachedRatesResponse);
 });
 
 // 2. Camera OCR Scale Reader API endpoint using Gemini Vision

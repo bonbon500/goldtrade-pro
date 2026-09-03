@@ -26,13 +26,13 @@ export async function fetchLiveGoldAndFxRates(): Promise<LiveGoldFxRates> {
   // 1. קודם כל ניסיון משיכה משרת האפליקציה המקומי/ענן (/api/rates)
   // השרת מתשאל ישירות את נתוני שוק Investing.com / Yahoo Finance ובנק ישראל ללא חסימות CORS
   try {
-    const serverRes = await fetch('/api/rates');
+    const serverRes = await fetch(`/api/rates?_t=${Date.now()}`, { cache: 'no-store' });
     if (serverRes.ok) {
       const serverData = await serverRes.json();
       if (serverData.success && serverData.data?.xauUsd && serverData.data?.usdIls) {
         goldOunceUSD = Number(serverData.data.xauUsd);
         usdToIls = Number(serverData.data.usdIls);
-        goldSource = serverData.data?.sources?.fx || 'Investing.com / Yahoo Finance (לייב)';
+        goldSource = serverData.data?.sources?.gold || 'Investing.com (ספוט XAU/USD חי)';
       }
     }
   } catch (e) {
