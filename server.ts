@@ -27,37 +27,72 @@ function getGeminiClient() {
   });
 }
 
+let cachedRatesResponse: any = null;
+let lastRatesFetchTime = 0;
+const CACHE_TTL_MS = 15000; // 15 seconds cache
+
 // 1. Live Gold & Exchange Rates API
 app.get('/api/rates', async (req, res) => {
   try {
-    let xauUsd = 4550.00;
-    let usdIls = 3.02;
-    let sourceGold = 'Investing / COMEX Gold';
-    let sourceFx = 'Investing.com / Interbank FX (לייב)';
+    if (cachedRatesResponse && Date.now() - lastRatesFetchTime < CACHE_TTL_MS) {
+      return res.json(cachedRatesResponse);
+    }
 
-    // 1. Fetch real-time USD/ILS exchange rate from Yahoo Finance (Exact match to Investing.com)
+    let xauUsd = 4492.89;
+    let usdIls = 3.0054;
+    let sourceGold = 'Investing.com (XAU/USD ספוט)';
+    let sourceFx = 'Investing.com (USD/ILS רציף)';
+
+    // 1. Fetch real-time USD/ILS exchange rate from Investing.com (Direct Jina Markdown Parser)
     let fxFetched = false;
     try {
-      const yFxRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDILS=X?interval=1m&range=1d', {
-        headers: { 'User-Agent': 'Mozilla/5.0' }
+      const jinaFxRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/usd-ils', {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(4000)
       });
-      if (yFxRes.ok) {
-        const yFxData = await yFxRes.json();
-        const price = yFxData?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (price && typeof price === 'number') {
-          usdIls = Number(price.toFixed(4));
-          sourceFx = 'Investing.com / Yahoo Finance (לייב)';
-          fxFetched = true;
+      if (jinaFxRes.ok) {
+        const text = await jinaFxRes.text();
+        const match = text.match(/USD ILS\) - במדור זה ניתן למצוא את השער \(?([0-9]+\.[0-9]+)\)?/) || text.match(/שער \(?([0-9]+\.[0-9]{3,4})\)?/);
+        if (match && match[1]) {
+          const parsed = parseFloat(match[1]);
+          if (!isNaN(parsed) && parsed > 1.5 && parsed < 6) {
+            usdIls = Number(parsed.toFixed(4));
+            sourceFx = 'Investing.com (USD/ILS רציף)';
+            fxFetched = true;
+          }
         }
       }
     } catch (e) {
-      console.warn('Yahoo Finance USD/ILS fetch failed:', e);
+      console.warn('Jina Investing USD/ILS parser failed, using Yahoo/BoI fallback:', e);
     }
 
-    // Fallback: Bank of Israel (בנק ישראל) Official API
+    // Fallback A: Yahoo Finance USDILS=X (Matches Investing.com feed)
     if (!fxFetched) {
       try {
-        const boiRes = await fetch('https://boi.org.il/PublicApi/GetExchangeRates');
+        const yFxRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDILS=X?interval=1m&range=1d', {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(3000)
+        });
+        if (yFxRes.ok) {
+          const yFxData = await yFxRes.json();
+          const price = yFxData?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          if (price && typeof price === 'number') {
+            usdIls = Number(price.toFixed(4));
+            sourceFx = 'Investing.com / Yahoo Finance (לייב)';
+            fxFetched = true;
+          }
+        }
+      } catch (e) {
+        console.warn('Yahoo Finance USD/ILS fetch failed:', e);
+      }
+    }
+
+    // Fallback B: Bank of Israel (בנק ישראל) Official API
+    if (!fxFetched) {
+      try {
+        const boiRes = await fetch('https://boi.org.il/PublicApi/GetExchangeRates', {
+          signal: AbortSignal.timeout(3000)
+        });
         if (boiRes.ok) {
           const boiData = await boiRes.json();
           const usdRate = boiData?.exchangeRates?.find((r: any) => r.key === 'USD');
@@ -72,88 +107,40 @@ app.get('/api/rates', async (req, res) => {
       }
     }
 
-    // Fallback: Open ER API
-    if (!fxFetched) {
-      try {
-        const fxRes = await fetch('https://open.er-api.com/v6/latest/USD');
-        if (fxRes.ok) {
-          const fxData = await fxRes.json();
-          if (fxData && fxData.rates && fxData.rates.ILS) {
-            usdIls = Number(fxData.rates.ILS.toFixed(4));
-            sourceFx = 'Open Exchange Rates';
-            fxFetched = true;
-          }
-        }
-      } catch (e) {
-        console.warn('FX fetch failed:', e);
-      }
-    }
-
-    // 2. Fetch real-time Gold XAU/USD spot price
+    // 2. Fetch real-time Gold Spot (XAU/USD) from Investing.com (Direct Jina Markdown Parser)
     let goldFetched = false;
-
-    // Source A: Yahoo Finance GC=F (COMEX Active Gold Futures / Spot)
     try {
-      const yGoldRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d', {
-        headers: { 'User-Agent': 'Mozilla/5.0' }
+      const jinaGoldRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/xau-usd', {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        signal: AbortSignal.timeout(4000)
       });
-      if (yGoldRes.ok) {
-        const yGoldData = await yGoldRes.json();
-        const price = yGoldData?.chart?.result?.[0]?.meta?.regularMarketPrice;
-        if (price && typeof price === 'number') {
-          xauUsd = Number(price.toFixed(2));
-          sourceGold = 'Investing / COMEX Gold (לייב)';
-          goldFetched = true;
+      if (jinaGoldRes.ok) {
+        const text = await jinaGoldRes.text();
+        const match = text.match(/XAU\/USD הוא ([0-9,]+\.[0-9]+)/) || text.match(/צמד המטבעות XAU\/USD הוא ([0-9,]+\.[0-9]+)/);
+        if (match && match[1]) {
+          const cleanNum = parseFloat(match[1].replace(/,/g, ''));
+          if (!isNaN(cleanNum) && cleanNum > 1000) {
+            xauUsd = Number(cleanNum.toFixed(2));
+            sourceGold = 'Investing.com (ספוט XAU/USD)';
+            goldFetched = true;
+          }
         }
       }
     } catch (e) {
-      console.warn('Yahoo Finance Gold GC=F fetch failed:', e);
+      console.warn('Jina Investing XAU/USD parser failed, using Coinbase/Binance fallback:', e);
     }
 
-    // Source B: gold-api.com (Free public gold spot API)
+    // Fallback A: Coinbase PAXG (1:1 Physical Gold Spot)
     if (!goldFetched) {
       try {
-        const gApiRes = await fetch('https://api.gold-api.com/price/XAU');
-        if (gApiRes.ok) {
-          const gData = await gApiRes.json();
-          if (gData && gData.price && typeof gData.price === 'number') {
-            xauUsd = Number(gData.price.toFixed(2));
-            sourceGold = 'Gold-API (לייב)';
-            goldFetched = true;
-          }
-        }
-      } catch (e) {
-        console.warn('Gold-API failed:', e);
-      }
-    }
-
-    // Source C: Custom MetalPriceAPI if user provided API key
-    const metalApiKey = (req.query.metalApiKey as string) || process.env.METAL_PRICE_API_KEY;
-    if (!goldFetched && metalApiKey) {
-      try {
-        const goldRes = await fetch(`https://api.metalpriceapi.com/v1/latest?api_key=${metalApiKey}&base=USD&currencies=XAU`);
-        if (goldRes.ok) {
-          const goldData = await goldRes.json();
-          if (goldData.success && goldData.rates && goldData.rates.XAU) {
-            xauUsd = Number((1 / goldData.rates.XAU).toFixed(2));
-            sourceGold = 'MetalpriceAPI (לייב)';
-            goldFetched = true;
-          }
-        }
-      } catch (e) {
-        console.warn('MetalpriceAPI failed:', e);
-      }
-    }
-
-    // Source D: Coinbase PAXG (Pax Gold 1:1 backed physical gold spot)
-    if (!goldFetched) {
-      try {
-        const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot');
+        const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot', {
+          signal: AbortSignal.timeout(3000)
+        });
         if (cbRes.ok) {
           const cbData = await cbRes.json();
           if (cbData && cbData.data && cbData.data.amount) {
             xauUsd = parseFloat(cbData.data.amount);
-            sourceGold = 'Coinbase PAXG (זהב פיזי)';
+            sourceGold = 'Coinbase PAXG (זהב פיזי ספוט)';
             goldFetched = true;
           }
         }
@@ -162,10 +149,12 @@ app.get('/api/rates', async (req, res) => {
       }
     }
 
-    // Source E: Binance PAXG/USDT
+    // Fallback B: Binance PAXG/USDT
     if (!goldFetched) {
       try {
-        const binanceRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT');
+        const binanceRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', {
+          signal: AbortSignal.timeout(3000)
+        });
         if (binanceRes.ok) {
           const binData = await binanceRes.json();
           if (binData && binData.price) {
@@ -179,17 +168,38 @@ app.get('/api/rates', async (req, res) => {
       }
     }
 
+    // Fallback C: Yahoo Finance GC=F (COMEX Active Gold)
+    if (!goldFetched) {
+      try {
+        const yGoldRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/GC=F?interval=1m&range=1d', {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(3000)
+        });
+        if (yGoldRes.ok) {
+          const yGoldData = await yGoldRes.json();
+          const price = yGoldData?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          if (price && typeof price === 'number') {
+            xauUsd = Number(price.toFixed(2));
+            sourceGold = 'COMEX Gold Futures';
+            goldFetched = true;
+          }
+        }
+      } catch (e) {
+        console.warn('Yahoo Finance Gold GC=F fetch failed:', e);
+      }
+    }
+
     // Calculate Gold 24K per gram in ILS
     // 1 Troy Ounce = 31.1034768 grams
     const gold24kPerGramUsd = xauUsd / 31.1034768;
     const gold24kPerGramIls = gold24kPerGramUsd * usdIls;
 
-    res.json({
+    const responsePayload = {
       success: true,
       timestamp: new Date().toISOString(),
       data: {
         xauUsd: Number(xauUsd.toFixed(2)),
-        usdIls: Number(usdIls.toFixed(3)),
+        usdIls: Number(usdIls.toFixed(4)),
         gold24kPerGramUsd: Number(gold24kPerGramUsd.toFixed(3)),
         gold24kPerGramIls: Number(gold24kPerGramIls.toFixed(2)),
         purityRatesIls: {
@@ -204,7 +214,10 @@ app.get('/api/rates', async (req, res) => {
           fx: sourceFx,
         }
       }
-    });
+    };
+    cachedRatesResponse = responsePayload;
+    lastRatesFetchTime = Date.now();
+    res.json(responsePayload);
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || 'Failed to fetch rates' });
   }

@@ -199,14 +199,28 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
           title="לחץ לפתיחת הלוח המלא של השערים"
         >
           <div className="flex items-center gap-4 min-w-max">
-            <span className="flex items-center gap-1.5 font-medium text-emerald-400">
+            <a
+              href="https://il.investing.com/currencies/xau-usd"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 font-medium text-emerald-400 hover:text-emerald-300 hover:underline cursor-pointer"
+              title="לחץ לצפייה בספוט זהב חי ב-Investing.com"
+            >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              XAU/USD: <strong className="text-white font-bold">${rates?.xauUsd?.toFixed(2) || '2685.40'}</strong>
-            </span>
+              XAU/USD: <strong className="text-white font-bold">${rates?.xauUsd?.toFixed(2) || '---'}</strong>
+            </a>
             <span className="text-slate-600">|</span>
-            <span className="font-medium text-amber-300">
-              USD/ILS: <strong className="text-white font-bold">₪{rates?.usdIls?.toFixed(3) || '3.650'}</strong>
-            </span>
+            <a
+              href="https://il.investing.com/currencies/usd-ils"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="font-medium text-amber-300 hover:text-amber-200 hover:underline cursor-pointer"
+              title="לחץ לצפייה בשער דולר/שקל רציף ב-Investing.com"
+            >
+              USD/ILS: <strong className="text-white font-bold">₪{rates?.usdIls?.toFixed(3) || '---'}</strong>
+            </a>
             <span className="text-slate-600">|</span>
             <span className="font-medium text-amber-400">
               זהב 24K: <strong className="text-amber-300 font-bold">₪{rates?.gold24kPerGramIls?.toFixed(2) || '315.20'}/גרם</strong>

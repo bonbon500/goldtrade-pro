@@ -181,11 +181,11 @@ export const LiveRatesModal: React.FC<LiveRatesModalProps> = ({
               <div className="flex items-center justify-between text-[10px] text-slate-500 mt-1">
                 <span>{customXauUsd ? 'אונקיה (שער מותאם אישית)' : 'אונקיית זהב טהור בלייב'}</span>
                 <a
-                  href="https://il.investing.com/commodities/gold"
+                  href="https://il.investing.com/currencies/xau-usd"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-amber-400/90 hover:text-amber-300 flex items-center gap-0.5 hover:underline"
-                  title="שער זהב בלייב באתר Investing.com"
+                  title="ספוט זהב חי באתר Investing.com"
                 >
                   <span>Investing</span>
                   <ExternalLink className="w-2.5 h-2.5" />

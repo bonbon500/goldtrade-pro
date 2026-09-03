@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, TrendingUp, Clock, DollarSign, Coins, Edit2, Check, Zap } from 'lucide-react';
+import { RefreshCw, TrendingUp, Clock, DollarSign, Coins, Edit2, Check, Zap, ExternalLink } from 'lucide-react';
 import { RatesData } from '../types';
 
 interface LiveRatesCardProps {
@@ -100,26 +100,45 @@ export const LiveRatesCard: React.FC<LiveRatesCardProps> = ({
       {/* Primary Rates Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
         {/* XAU/USD Spot */}
-        <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-between">
-          <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
-            <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
-            אונקיית זהב (XAU/USD)
-          </span>
+        <a
+          href="https://il.investing.com/currencies/xau-usd"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-amber-500/60 rounded-xl p-3 flex flex-col justify-between transition-all group cursor-pointer"
+          title="לחץ לצפייה בספוט זהב חי (XAU/USD) באתר Investing.com"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-400 group-hover:text-amber-300 font-medium flex items-center gap-1">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              ספוט זהב (XAU/USD)
+            </span>
+            <ExternalLink className="w-3 h-3 text-amber-400/70 group-hover:text-amber-400" />
+          </div>
           <div className="mt-1">
             <span className="text-lg sm:text-xl font-black text-amber-300 font-mono tracking-tight">
               ${rates.xauUsd.toFixed(2)}
             </span>
-            <span className="text-[11px] text-slate-400 block">31.1035 גרם</span>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5">
+              <span>31.1035 גרם</span>
+              <span className="text-amber-400/80 group-hover:underline">Investing.com ↗</span>
+            </div>
           </div>
-        </div>
+        </a>
 
         {/* Continuous USD/ILS FX */}
         <div className="bg-slate-800/60 border border-slate-700/60 rounded-xl p-3 flex flex-col justify-between relative">
           <div className="flex items-center justify-between">
-            <span className="text-xs text-slate-400 font-medium flex items-center gap-1">
+            <a
+              href="https://il.investing.com/currencies/usd-ils"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs text-slate-400 hover:text-amber-300 font-medium flex items-center gap-1 group/fx"
+              title="לחץ לצפייה בשער דולר/שקל רציף (USD/ILS) באתר Investing.com"
+            >
               <DollarSign className="w-3.5 h-3.5 text-amber-400" />
-              שער דולר רציף
-            </span>
+              <span>שער דולר רציף</span>
+              <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover/fx:opacity-100" />
+            </a>
             {onUpdateCustomUsdIls && (
               <button
                 onClick={() => {
@@ -143,12 +162,14 @@ export const LiveRatesCard: React.FC<LiveRatesCardProps> = ({
                 value={fxInput}
                 onChange={(e) => setFxInput(e.target.value)}
                 className="w-20 bg-slate-950 border border-amber-500 rounded text-xs p-1 text-slate-100 font-mono"
+                placeholder="3.650"
               />
               <button
                 onClick={handleSaveCustomFx}
-                className="p-1 bg-amber-500 text-slate-950 rounded hover:bg-amber-400"
+                className="p-1 bg-amber-500 text-slate-950 rounded hover:bg-amber-400 transition-colors"
+                title="שמור שער מותאם"
               >
-                <Check className="w-3 h-3" />
+                <Check className="w-3.5 h-3.5" />
               </button>
               {customUsdIls && (
                 <button
@@ -161,13 +182,24 @@ export const LiveRatesCard: React.FC<LiveRatesCardProps> = ({
             </div>
           ) : (
             <div className="mt-1">
-              <span className="text-lg sm:text-xl font-black text-slate-100 font-mono tracking-tight flex items-center gap-1">
-                ₪{effectiveUsdIls.toFixed(3)}
+              <div className="flex items-center gap-1.5">
+                <span className="text-lg sm:text-xl font-black text-slate-100 font-mono tracking-tight">
+                  ₪{effectiveUsdIls.toFixed(3)}
+                </span>
                 <Zap className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-              </span>
-              <span className="text-[11px] text-slate-400 block">
-                {customUsdIls ? 'שער מותאם אישית' : 'שער רציף בזמן אמת'}
-              </span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 mt-0.5">
+                <span>{customUsdIls ? 'מותאם אישית' : 'שער רציף'}</span>
+                <a
+                  href="https://il.investing.com/currencies/usd-ils"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-amber-400/80 hover:underline"
+                  title="צפה באתר Investing.com"
+                >
+                  Investing.com ↗
+                </a>
+              </div>
             </div>
           )}
         </div>

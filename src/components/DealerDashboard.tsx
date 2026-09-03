@@ -158,14 +158,34 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs">
-          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-slate-400 block">XAU/USD (אונקיה)</span>
-            <strong className="text-amber-300 font-mono text-sm">${rates?.xauUsd?.toFixed(2) || '---'}</strong>
-          </div>
-          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-            <span className="text-[10px] text-slate-400 block">USD/ILS (דולר)</span>
-            <strong className="text-slate-200 font-mono text-sm">₪{rates?.usdIls?.toFixed(3) || '---'}</strong>
-          </div>
+          <a
+            href="https://il.investing.com/currencies/xau-usd"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group block"
+            title="לחץ לצפייה בשער ספוט זהב חי (XAU/USD) באתר Investing.com"
+          >
+            <span className="text-[10px] text-slate-400 group-hover:text-amber-300 flex items-center justify-center gap-1">
+              <span>XAU/USD (זהב)</span>
+              <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+            </span>
+            <strong className="text-amber-300 font-mono text-sm block my-0.5">${rates?.xauUsd?.toFixed(2) || '---'}</strong>
+            <span className="text-[9px] text-amber-500/80 group-hover:underline block">Investing.com ↗</span>
+          </a>
+          <a
+            href="https://il.investing.com/currencies/usd-ils"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group block"
+            title="לחץ לצפייה בשער דולר/שקל רציף (USD/ILS) באתר Investing.com"
+          >
+            <span className="text-[10px] text-slate-400 group-hover:text-amber-300 flex items-center justify-center gap-1">
+              <span>USD/ILS (דולר)</span>
+              <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+            </span>
+            <strong className="text-slate-200 font-mono text-sm block my-0.5">₪{rates?.usdIls?.toFixed(3) || '---'}</strong>
+            <span className="text-[9px] text-amber-500/80 group-hover:underline block">Investing.com ↗</span>
+          </a>
           <div className="bg-slate-950 p-2.5 rounded-xl border border-amber-500/30">
             <span className="text-[10px] text-amber-400 block font-bold">24K (גרם)</span>
             <strong className="text-amber-300 font-mono text-sm">₪{gold24k.toFixed(2)}</strong>
