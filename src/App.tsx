@@ -12,7 +12,7 @@ import { ContactPickerModal } from './components/ContactPickerModal';
 import { FlutterFlowSpecCenter } from './components/FlutterFlowSpecCenter';
 import { DealerDashboard } from './components/DealerDashboard';
 import { TradeItem, RatesData, CartTotals, TradeDeal, BusinessSettings, GoldItem, DiamondItem, ItemCategory } from './types';
-import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home } from 'lucide-react';
+import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail } from 'lucide-react';
 import { getLiveGoldAndFxRates, getCachedGoldRates } from './utils/goldRates';
 
 const DEFAULT_SETTINGS: BusinessSettings = {
@@ -90,6 +90,7 @@ export default function App() {
   const [activeClientInfo, setActiveClientInfo] = useState({
     name: '',
     phone: '',
+    email: '',
     notes: '',
   });
 
@@ -246,6 +247,7 @@ export default function App() {
       }),
       clientName: activeClientInfo.name || 'לקוח מזומן בשטח',
       clientPhone: activeClientInfo.phone,
+      clientEmail: activeClientInfo.email,
       clientNotes: activeClientInfo.notes,
       items: [...cart],
       ratesSnapshot: rates,
@@ -316,7 +318,7 @@ ${settings.dealerName} | ${settings.phone}`;
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans dir-rtl select-none pb-12 transition-colors duration-500">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans dir-rtl select-none pb-24 md:pb-12 transition-colors duration-500">
       {/* Header */}
       <HeaderNavbar
         mode={mode}
@@ -488,6 +490,22 @@ ${settings.dealerName} | ${settings.phone}`;
                         value={activeClientInfo.phone}
                         onChange={(e) => setActiveClientInfo({ ...activeClientInfo, phone: e.target.value })}
                         placeholder="050-0000000"
+                        className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-3 pr-10 pl-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-mono text-left dir-ltr shadow-inner"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold text-slate-300 block mb-1.5">
+                      כתובת אימייל (אופציונלי - לשליחת סיכום העסקה במייל):
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-slate-500 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                      <input
+                        type="email"
+                        value={activeClientInfo.email}
+                        onChange={(e) => setActiveClientInfo({ ...activeClientInfo, email: e.target.value })}
+                        placeholder="client@example.com"
                         className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-3 pr-10 pl-4 text-sm text-slate-100 placeholder-slate-500 focus:outline-none font-mono text-left dir-ltr shadow-inner"
                       />
                     </div>
@@ -719,17 +737,25 @@ ${settings.dealerName} | ${settings.phone}`;
                 {/* Deal Summary Box */}
                 <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-4 sm:p-6 space-y-5">
                   {/* Customer Info Card Header */}
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex items-center justify-between border-b border-slate-800 pb-3 flex-wrap gap-2">
                     <div>
                       <span className="text-[10px] text-slate-400 block uppercase font-bold">שם הלקוח / חברה:</span>
                       <h3 className="text-sm font-bold text-slate-100">{activeClientInfo.name || 'לקוח מזומן בשטח'}</h3>
                     </div>
-                    {activeClientInfo.phone && (
-                      <div className="text-left">
-                        <span className="text-[10px] text-slate-400 block uppercase font-bold">טלפון:</span>
-                        <span className="text-xs font-mono text-amber-300 font-bold dir-ltr block">{activeClientInfo.phone}</span>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-4 text-left">
+                      {activeClientInfo.phone && (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">טלפון:</span>
+                          <span className="text-xs font-mono text-amber-300 font-bold dir-ltr block">{activeClientInfo.phone}</span>
+                        </div>
+                      )}
+                      {activeClientInfo.email && (
+                        <div>
+                          <span className="text-[10px] text-slate-400 block uppercase font-bold">אימייל:</span>
+                          <span className="text-xs font-mono text-slate-300 dir-ltr block">{activeClientInfo.email}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Transaction Rates Breakdown Card (Only relevant karats for this deal) */}
@@ -877,6 +903,69 @@ ${settings.dealerName} | ${settings.phone}`;
         )}
       </main>
 
+      {/* Mobile Bottom Navigation Bar (Thumb-friendly field UI) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-2xl dir-rtl">
+        <button
+          type="button"
+          onClick={() => setActiveStep(0)}
+          className={`flex-1 flex flex-col items-center py-1 rounded-xl transition-all ${
+            activeStep === 0 ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <Home className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">דשבורד</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveStep(1)}
+          className={`flex-1 flex flex-col items-center py-1 rounded-xl transition-all ${
+            activeStep === 1 ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <User className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">לקוח</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveStep(2)}
+          className={`flex-1 flex flex-col items-center py-1 rounded-xl relative transition-all ${
+            activeStep === 2 ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <div className="relative mb-0.5">
+            <Coins className="w-5 h-5" />
+            {cart.length > 0 && (
+              <span className="absolute -top-1.5 -right-2.5 bg-amber-500 text-slate-950 font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                {cart.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px]">מחשבון / סל</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveStep(3)}
+          className={`flex-1 flex flex-col items-center py-1 rounded-xl transition-all ${
+            activeStep === 3 ? 'text-amber-400 font-black' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          <FileText className="w-5 h-5 mb-0.5" />
+          <span className="text-[10px]">סיכום</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsHistoryOpen(true)}
+          className="flex-1 flex flex-col items-center py-1 rounded-xl text-slate-400 hover:text-slate-200 transition-all"
+        >
+          <CheckCircle2 className="w-5 h-5 mb-0.5 text-amber-500/80" />
+          <span className="text-[10px]">עסקאות</span>
+        </button>
+      </nav>
+
       {/* Modals */}
       <ContactPickerModal
         isOpen={isContactPickerOpen}
@@ -886,6 +975,7 @@ ${settings.dealerName} | ${settings.phone}`;
           setActiveClientInfo({
             name: contact.name,
             phone: contact.phone,
+            email: contact.email || '',
             notes: contact.notes || activeClientInfo.notes,
           });
         }}
@@ -905,6 +995,7 @@ ${settings.dealerName} | ${settings.phone}`;
         rates={effectiveRates}
         clientName={activeClientInfo.name}
         clientPhone={activeClientInfo.phone}
+        clientEmail={activeClientInfo.email}
         clientNotes={activeClientInfo.notes}
         settings={settings}
       />

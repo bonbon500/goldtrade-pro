@@ -58,37 +58,12 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
             </div>
           </div>
 
-          {/* Mode Switcher Tabs */}
-          <div className="hidden md:flex items-center p-1 bg-slate-800/80 rounded-xl border border-slate-700">
-            <button
-              onClick={() => setMode('app')}
-              id="tab-app-mode"
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                mode === 'app'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Smartphone className="w-4 h-4" />
-              <span>אפליקציית שטח</span>
-              {cartCount > 0 && (
-                <span className="bg-slate-950 text-amber-400 text-xs px-2 py-0.5 rounded-full font-bold">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setMode('flutterflow')}
-              id="tab-flutterflow-mode"
-              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
-                mode === 'flutterflow'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow-md'
-                  : 'text-slate-300 hover:text-white'
-              }`}
-            >
-              <Code className="w-4 h-4" />
-              <span>מפרט FlutterFlow</span>
-            </button>
+          {/* Center Title Badge */}
+          <div className="hidden md:flex items-center gap-2">
+            <span className="text-xs font-bold text-slate-400 bg-slate-800/60 border border-slate-700/60 px-3 py-1 rounded-full flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span>מערכת מסחר ומחשבון שטח מקצועי</span>
+            </span>
           </div>
 
           {/* Action Buttons */}
@@ -161,36 +136,6 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
           </div>
         </div>
 
-        {/* Mobile View Mode Switcher */}
-        <div className="flex md:hidden items-center justify-center p-1 my-2 bg-slate-800/90 rounded-xl border border-slate-700/80">
-          <button
-            onClick={() => setMode('app')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              mode === 'app'
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'text-slate-300'
-            }`}
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span>אפליקציית שטח</span>
-            {cartCount > 0 && (
-              <span className="bg-slate-950 text-amber-400 text-[10px] px-1.5 py-0.2 rounded-full">
-                {cartCount}
-              </span>
-            )}
-          </button>
-          <button
-            onClick={() => setMode('flutterflow')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              mode === 'flutterflow'
-                ? 'bg-amber-500 text-slate-950 shadow-sm'
-                : 'text-slate-300'
-            }`}
-          >
-            <Code className="w-3.5 h-3.5" />
-            <span>מפרט FlutterFlow</span>
-          </button>
-        </div>
 
         {/* Live Exchange Ticker Strip */}
         <div

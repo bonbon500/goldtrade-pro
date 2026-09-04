@@ -90,6 +90,7 @@ export interface TradeDeal {
   date: string;
   clientName: string;
   clientPhone: string;
+  clientEmail?: string;
   clientNotes?: string;
   items: TradeItem[];
   ratesSnapshot: RatesData;

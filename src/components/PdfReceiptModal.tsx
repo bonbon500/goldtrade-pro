@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Printer, Download, Send, Copy, Check, ShieldCheck, CheckCircle2, FileText, FileCode, Image } from 'lucide-react';
+import { X, Printer, Download, Send, Copy, Check, ShieldCheck, CheckCircle2, FileText, FileCode, Image, Mail } from 'lucide-react';
 import { TradeItem, CartTotals, RatesData, BusinessSettings, DiamondItem } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -12,6 +12,7 @@ interface PdfReceiptModalProps {
   rates: RatesData | null;
   clientName: string;
   clientPhone: string;
+  clientEmail?: string;
   clientNotes: string;
   settings: BusinessSettings;
 }
@@ -24,6 +25,7 @@ export const PdfReceiptModal: React.FC<PdfReceiptModalProps> = ({
   rates,
   clientName,
   clientPhone,
+  clientEmail,
   clientNotes,
   settings,
 }) => {
@@ -136,6 +138,34 @@ ${settings.dealerName} | ${settings.phone}`;
 
     // Fallback window open
     window.open(waUrl, '_blank');
+  };
+
+  // Send formatted deal summary and details via Email
+  const handleSendEmail = () => {
+    const subject = encodeURIComponent(`סיכום עסקת זהב ${dealId} - ${settings.businessName}`);
+    const emailBody = `שלום ${clientName || 'סוחר / לקוח יקר'},
+
+להלן סיכום הצעת המחיר לעסקה מאת ${settings.businessName}:
+
+מספר עסקה: ${dealId}
+תאריך: ${dealDate}
+סה"כ משקל זהב: ${totals.totalWeightGrams.toFixed(2)} גרם
+${totals.totalCarats ? `סה"כ יהלומים: ${totals.totalCarats.toFixed(2)} קראט\n` : ''}
+סה"כ לתשלום סופי: ₪${totals.totalOfferPriceIls.toLocaleString('he-IL', { minimumFractionDigits: 2 })}
+
+פירוט פריטים בעסקה:
+${cart.map((item, i) => `${i + 1}. ${item.name} (${item.karat ? item.karat + 'K' : 'יהלום'}) - משקל: ${item.weightGrams}g | סכום: ₪${item.offerPriceIls.toLocaleString('he-IL')}`).join('\n')}
+
+שערי ייחוס בעסקה:
+• XAU/USD (זהב): $${rates?.xauUsd?.toFixed(2) || '---'}
+• USD/ILS (דולר): ₪${rates?.usdIls?.toFixed(3) || '---'}
+
+בברכה,
+${settings.dealerName} | ${settings.phone}
+${settings.businessName} - ${settings.address}`;
+
+    const mailtoUrl = `mailto:${clientEmail || ''}?subject=${subject}&body=${encodeURIComponent(emailBody)}`;
+    window.open(mailtoUrl, '_blank');
   };
 
   // Copy receipt canvas image to clipboard for easy WhatsApp pasting (Ctrl+V)
@@ -363,7 +393,18 @@ ${settings.dealerName} | ${settings.phone}`;
               title="פתח וואטסאפ לשליחת הסיכום"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>פתח WhatsApp</span>
+              <span>WhatsApp</span>
+            </button>
+
+            {/* Direct Email Button */}
+            <button
+              onClick={handleSendEmail}
+              disabled={isGeneratingPdf}
+              className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-2 rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 disabled:opacity-50"
+              title="שלח סיכום עסקה ישירות למייל הלקוח"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>שלח במייל</span>
             </button>
 
             {/* Copy WhatsApp Text Button */}
@@ -462,7 +503,7 @@ ${settings.dealerName} | ${settings.phone}`;
             </div>
 
             {/* Client Info Bar */}
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-6 grid grid-cols-2 gap-2 text-xs">
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-6 grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
               <div>
                 <span className="text-slate-500 block text-[11px]">שם הלקוח:</span>
                 <strong className="text-slate-900 text-sm font-bold">{clientName || 'לקוח כללי / מזומן'}</strong>
@@ -473,8 +514,15 @@ ${settings.dealerName} | ${settings.phone}`;
                 <strong className="text-slate-900 font-mono text-sm">{clientPhone || 'לא צוין'}</strong>
               </div>
 
+              {clientEmail && (
+                <div>
+                  <span className="text-slate-500 block text-[11px]">אימייל:</span>
+                  <strong className="text-slate-900 font-mono text-xs">{clientEmail}</strong>
+                </div>
+              )}
+
               {clientNotes && (
-                <div className="col-span-2 pt-2 border-t border-slate-200 text-slate-700">
+                <div className="col-span-2 sm:col-span-3 pt-2 border-t border-slate-200 text-slate-700">
                   <span className="text-slate-500 text-[11px] block">הערות:</span>
                   <span>{clientNotes}</span>
                 </div>
