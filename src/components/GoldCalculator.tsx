@@ -408,7 +408,7 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
               <button
                 type="button"
                 onClick={() => {
-                  setWeightInput('0');
+                  setWeightInput('');
                   setItemNotes('');
                   setItemPhotoUrl('');
                 }}

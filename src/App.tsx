@@ -10,6 +10,8 @@ import { SettingsModal } from './components/SettingsModal';
 import { ContactPickerModal } from './components/ContactPickerModal';
 import { FlutterFlowSpecCenter } from './components/FlutterFlowSpecCenter';
 import { DealerDashboard } from './components/DealerDashboard';
+import { PostItemChoiceModal } from './components/PostItemChoiceModal';
+import { AddItemModal } from './components/AddItemModal';
 import { TradeItem, RatesData, CartTotals, TradeDeal, BusinessSettings, GoldItem, DiamondItem, ItemCategory } from './types';
 import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail, Edit3 } from 'lucide-react';
 import { getLiveGoldAndFxRates, getCachedGoldRates } from './utils/goldRates';
@@ -25,6 +27,19 @@ const DEFAULT_SETTINGS: BusinessSettings = {
 export default function App() {
   const [mode, setMode] = useState<'app' | 'flutterflow'>('app');
   const [activeStep, setActiveStep] = useState<0 | 1 | 2 | 3>(0); // 0: Personal Dashboard, 1: Customer Info, 2: Deal Items, 3: Deal Summary
+
+  // Auto-scroll to top whenever moving between screens/steps (eliminates need to manually scroll up on mobile)
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+    const rafId = requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [activeStep, mode]);
 
   const [rates, setRates] = useState<RatesData | null>(() => {
     const cached = getCachedGoldRates();
@@ -133,6 +148,9 @@ export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRatesModalOpen, setIsRatesModalOpen] = useState(false);
   const [isContactPickerOpen, setIsContactPickerOpen] = useState(false);
+  const [lastAddedItem, setLastAddedItem] = useState<TradeItem | null>(null);
+  const [isPostAddChoiceOpen, setIsPostAddChoiceOpen] = useState<boolean>(false);
+  const [isAddItemModalOpen, setIsAddItemModalOpen] = useState<boolean>(false);
 
   // Client info for active receipt
   const [activeClientInfo, setActiveClientInfo] = useState({
@@ -266,6 +284,9 @@ export default function App() {
 
   const handleAddItem = (item: TradeItem) => {
     setCart((prev) => [item, ...prev]);
+    setLastAddedItem(item);
+    setIsAddItemModalOpen(false);
+    setIsPostAddChoiceOpen(true);
   };
 
   const handleRemoveItem = (id: string) => {
@@ -428,7 +449,7 @@ ${settings.dealerName} | ${settings.phone}`;
         <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2.5 shadow-xl flex items-center justify-between text-xs font-bold sticky top-14 sm:top-16 z-40 border-b border-amber-600">
           <div className="flex items-center gap-2">
             <span className="text-base animate-bounce">🚀</span>
-            <span>עודכנה גרסה חדשה בשרת (v2.2)! יש לרענן את המכשיר כדי לטעון אותה.</span>
+            <span>עודכנה גרסה חדשה בשרת (v2.3)! יש לרענן את המכשיר כדי לטעון אותה.</span>
           </div>
           <button
             type="button"
@@ -810,14 +831,11 @@ ${settings.dealerName} | ${settings.phone}`;
                     {/* Quick Button to Add Another Item */}
                     <button
                       type="button"
-                      onClick={() => {
-                        const topElem = document.getElementById('diamond-calculator-top') || document.getElementById('calculator-top');
-                        topElem?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                      }}
-                      className="w-full py-2.5 px-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-all"
+                      onClick={() => setIsAddItemModalOpen(true)}
+                      className="w-full py-3 px-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.99]"
                     >
-                      <Plus className="w-4 h-4 text-amber-400 stroke-[2.5]" />
-                      <span>+ הוסף פריט נוסף למחשבון (זהב או יהלום)</span>
+                      <Plus className="w-4 h-4 text-amber-400 stroke-[3]" />
+                      <span>+ הוסף פריט נוסף (פתח חלון חדש להזנת פריט)</span>
                     </button>
                   </div>
                 )}
@@ -1174,6 +1192,33 @@ ${settings.dealerName} | ${settings.phone}`;
         onUpdateCustomUsdIls={handleSetCustomUsdIls}
         customXauUsd={customXauUsd}
         onUpdateCustomXauUsd={handleSetCustomXauUsd}
+      />
+
+      {/* Post-Item Added Decision Choice Modal */}
+      <PostItemChoiceModal
+        isOpen={isPostAddChoiceOpen}
+        lastItem={lastAddedItem}
+        cartCount={cart.length}
+        totalCartOfferIls={totals.totalOfferPriceIls}
+        onAddAnotherItem={() => {
+          setIsPostAddChoiceOpen(false);
+          setIsAddItemModalOpen(true);
+        }}
+        onProceedToSummary={() => {
+          setIsPostAddChoiceOpen(false);
+          setActiveStep(3);
+        }}
+        onClose={() => setIsPostAddChoiceOpen(false)}
+      />
+
+      {/* Dedicated Clean New Window for Adding Item */}
+      <AddItemModal
+        isOpen={isAddItemModalOpen}
+        onClose={() => setIsAddItemModalOpen(false)}
+        rates={effectiveRates}
+        defaultMarginPercent={settings.defaultMarginPercent}
+        onAddItem={handleAddItem}
+        cartCount={cart.length}
       />
     </div>
   );
