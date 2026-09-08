@@ -1,195 +1,42 @@
-import React from 'react';
-import { Plus, Coins, BookUser, History, FileText, ChevronLeft, Gem, ShoppingBag, Layers, ExternalLink, Edit3, Settings, Download, Smartphone } from 'lucide-react';
-import { TradeDeal, RatesData, BusinessSettings } from '../types';
+import React, { useState } from 'react';
+import { Coins, Gem, ArrowLeft, ExternalLink, Percent, Check } from 'lucide-react';
+import { RatesData, BusinessSettings } from '../types';
 
 interface DealerDashboardProps {
   settings: BusinessSettings;
   rates: RatesData | null;
-  history: TradeDeal[];
-  onStartNewDeal: (category?: 'gold' | 'diamond') => void;
-  onOpenHistory: () => void;
-  onOpenSettings: () => void;
+  onStartNewDeal: (category: 'gold' | 'diamond') => void;
+  onUpdateDefaultMargin: (newMargin: number) => void;
   onOpenRatesModal: () => void;
-  onOpenContactPicker: () => void;
-  onViewDealReceipt?: (deal: TradeDeal) => void;
-  onEditDeal?: (deal: TradeDeal) => void;
+  onOpenSettings: () => void;
 }
 
 export const DealerDashboard: React.FC<DealerDashboardProps> = ({
   settings,
   rates,
-  history,
   onStartNewDeal,
-  onOpenHistory,
-  onOpenSettings,
+  onUpdateDefaultMargin,
   onOpenRatesModal,
-  onOpenContactPicker,
-  onViewDealReceipt,
-  onEditDeal,
 }) => {
-  const totalDealsCount = history.length;
-  const totalWeightGrams = history.reduce((sum, d) => sum + (d.totals?.totalWeightGrams || 0), 0);
-  
-  // Calculate total diamond carats across deals
-  const totalDiamondCarats = history.reduce((sum, deal) => {
-    const diamondItems = (deal.items || []).filter((i) => i.category === 'diamond');
-    return sum + diamondItems.reduce((dSum, dItem: any) => dSum + (dItem.caratWeight || 0), 0);
-  }, 0);
-
-  const totalPaidIls = history.reduce((sum, d) => sum + (d.totals?.totalOfferPriceIls || 0), 0);
-  const recentDeals = history.slice(0, 4);
+  const [selectedCategory, setSelectedCategory] = useState<'gold' | 'diamond'>('gold');
+  const [marginInput, setMarginInput] = useState<number>(settings.defaultMarginPercent);
+  const [marginSavedAnim, setMarginSavedAnim] = useState<boolean>(false);
 
   const gold24k = rates?.gold24kPerGramIls || 315.2;
 
+  const handleMarginChange = (val: number) => {
+    const cleanVal = Math.max(0, Math.min(50, Number(val.toFixed(1))));
+    setMarginInput(cleanVal);
+    onUpdateDefaultMargin(cleanVal);
+    setMarginSavedAnim(true);
+    setTimeout(() => setMarginSavedAnim(false), 1200);
+  };
+
   return (
-    <div className="space-y-5 dir-rtl max-w-4xl mx-auto">
-      {/* Top Main Action Bar */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-            שלום, <span className="text-amber-400">{settings.dealerName || 'סוחר זהב ויהלומים'}</span>
-          </h1>
-          <p className="text-xs text-slate-400 mt-1">
-            מערכת ניהול ותמכור עסקאות זהב ויהלומים בין סוחרים (B2B)
-          </p>
-        </div>
-
-        {/* Dual New Deal Buttons: Gold vs Diamond */}
-        <div className="flex items-center gap-2.5 w-full md:w-auto">
-          <button
-            type="button"
-            onClick={() => onStartNewDeal('gold')}
-            className="flex-1 md:flex-none bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-black text-xs sm:text-sm px-4 py-3 rounded-xl shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 transition-all border border-amber-300/30"
-          >
-            <Coins className="w-4 h-4 text-slate-950" />
-            <span>עסקת זהב +</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onStartNewDeal('diamond')}
-            className="flex-1 md:flex-none bg-gradient-to-r from-cyan-500 via-blue-600 to-amber-500 hover:from-cyan-400 hover:to-amber-400 active:scale-95 text-slate-950 font-black text-xs sm:text-sm px-4 py-3 rounded-xl shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 transition-all border border-cyan-300/30"
-          >
-            <Gem className="w-4 h-4 text-slate-950" />
-            <span>עסקת יהלומים (B2B / אדם פרטי) +</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Quick Trade Mode Launcher Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Gold Calculator Shortcut */}
-        <div
-          onClick={() => onStartNewDeal('gold')}
-          className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/40 p-4 rounded-2xl cursor-pointer transition-all group flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20 group-hover:scale-105 transition-transform">
-              <Coins className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
-                  מחשבון עסקאות זהב
-                </h3>
-                <span className="text-[10px] bg-amber-500/10 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
-                  24K / 18K / 14K
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                שקילת זהב לפי קראט בקיזוז מרווח סוחר.
-              </p>
-            </div>
-          </div>
-          <ChevronLeft className="w-5 h-5 text-slate-500 group-hover:text-amber-400 transform group-hover:-translate-x-1 transition-all" />
-        </div>
-
-        {/* Diamond Calculator Shortcut */}
-        <div
-          onClick={() => onStartNewDeal('diamond')}
-          className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-cyan-500/40 p-4 rounded-2xl cursor-pointer transition-all group flex items-center justify-between"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20 group-hover:scale-105 transition-transform">
-              <Gem className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white group-hover:text-cyan-300 transition-colors">
-                  מחשבון יהלומים (B2B / אדם פרטי)
-                </h3>
-                <span className="text-[10px] bg-cyan-950 text-cyan-300 border border-cyan-800 px-2 py-0.5 rounded-full font-bold">
-                  סוחרים &bull; אדם פרטי
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                תמחור רפפורט לסוחרים, קנייה/מכירה מפרטי ותכשיטים.
-              </p>
-            </div>
-          </div>
-          <ChevronLeft className="w-5 h-5 text-slate-500 group-hover:text-cyan-400 transform group-hover:-translate-x-1 transition-all" />
-        </div>
-
-        {/* Dealer Settings Shortcut Card */}
-        <div
-          onClick={onOpenSettings}
-          className="bg-slate-900 hover:bg-slate-850 border border-amber-500/30 hover:border-amber-400 p-4 rounded-2xl cursor-pointer transition-all group flex items-center justify-between sm:col-span-2 shadow-lg"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-400 rounded-xl border border-amber-500/30 group-hover:scale-105 transition-transform shadow-inner">
-              <Settings className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
-                  הגדרות סוחר ופרטי עסק
-                </h3>
-                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
-                  עמלת ברירת מחדל ({settings.defaultMarginPercent}%) &bull; לוגו &bull; ח.פ
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                הגדרת עמלת סוחר קבועה, לוגו העסק, שם הסוחר, טלפון, ח.פ והערות לקבלות.
-              </p>
-            </div>
-          </div>
-          <ChevronLeft className="w-5 h-5 text-slate-500 group-hover:text-amber-400 transform group-hover:-translate-x-1 transition-all" />
-        </div>
-
-        {/* Native Android APK Installer Card */}
-        <a
-          href="/GoldTrade-Pro.apk"
-          download="GoldTrade-Pro.apk"
-          className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 hover:from-emerald-900/50 hover:to-slate-850 border border-emerald-500/30 hover:border-emerald-400 p-4 rounded-2xl cursor-pointer transition-all group flex items-center justify-between sm:col-span-2 shadow-lg"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 text-emerald-400 rounded-xl border border-emerald-500/30 group-hover:scale-105 transition-transform shadow-inner">
-              <Smartphone className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors flex items-center gap-2">
-                  <span>הורד אפליקציה לאנדרואיד (קובץ התקנה APK)</span>
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">
-                    התקנה ישירה למכשיר
-                  </span>
-                </h3>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                התקנה כאפליקציה אמיתית בנייד עם אייקון תכשיט זהב יוקרתי, ללא תלות בסימנייה של כרום.
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2 bg-emerald-500/15 group-hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0">
-            <Download className="w-4 h-4" />
-            <span>הורד קובץ APK</span>
-          </div>
-        </a>
-      </div>
-
-      {/* Live Market Gold Rates Row */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+    <div className="space-y-4 dir-rtl max-w-2xl mx-auto pb-10">
+      {/* 1. Top Row with Live Rates */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2.5">
           <div className="flex items-center gap-2">
             <Coins className="w-4 h-4 text-amber-400" />
             <span className="text-xs font-bold text-slate-200">שערי זהב ודולר לייב</span>
@@ -216,183 +63,240 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
           </div>
         </div>
 
+        {/* Live Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-center text-xs">
           <a
             href="https://il.investing.com/currencies/xau-usd"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group block"
-            title="לחץ לצפייה בשער ספוט זהב חי (XAU/USD) באתר Investing.com"
+            className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group block shadow-inner"
+            title="ספוט זהב עולמי (XAU/USD)"
           >
             <span className="text-[10px] text-slate-400 group-hover:text-amber-300 flex items-center justify-center gap-1">
               <span>XAU/USD (זהב)</span>
-              <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+              <ExternalLink className="w-2.5 h-2.5 opacity-60" />
             </span>
             <strong className="text-amber-300 font-mono text-sm block my-0.5">${rates?.xauUsd?.toFixed(2) || '---'}</strong>
-            <span className="text-[9px] text-amber-500/80 group-hover:underline block">Investing.com ↗</span>
+            <span className="text-[9px] text-amber-500/80 block">Investing.com ↗</span>
           </a>
+
           <a
             href="https://il.investing.com/currencies/usd-ils"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group block"
-            title="לחץ לצפייה בשער דולר/שקל רציף (USD/ILS) באתר Investing.com"
+            className="bg-slate-950 hover:bg-slate-900 p-2.5 rounded-xl border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group block shadow-inner"
+            title="שער דולר/שקל רציף (USD/ILS)"
           >
             <span className="text-[10px] text-slate-400 group-hover:text-amber-300 flex items-center justify-center gap-1">
               <span>USD/ILS (דולר)</span>
-              <ExternalLink className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100" />
+              <ExternalLink className="w-2.5 h-2.5 opacity-60" />
             </span>
             <strong className="text-slate-200 font-mono text-sm block my-0.5">₪{rates?.usdIls?.toFixed(3) || '---'}</strong>
-            <span className="text-[9px] text-amber-500/80 group-hover:underline block">Investing.com ↗</span>
+            <span className="text-[9px] text-amber-500/80 block">Investing.com ↗</span>
           </a>
-          <div className="bg-slate-950 p-2.5 rounded-xl border border-amber-500/30">
+
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-amber-500/30 shadow-inner">
             <span className="text-[10px] text-amber-400 block font-bold">24K (גרם)</span>
             <strong className="text-amber-300 font-mono text-sm">₪{gold24k.toFixed(2)}</strong>
           </div>
-          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 shadow-inner">
             <span className="text-[10px] text-slate-400 block">18K (גרם)</span>
             <strong className="text-slate-200 font-mono text-sm">₪{(gold24k * 0.75).toFixed(2)}</strong>
           </div>
-          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 shadow-inner">
             <span className="text-[10px] text-slate-400 block">14K (גרם)</span>
             <strong className="text-slate-200 font-mono text-sm">₪{(gold24k * 0.585).toFixed(2)}</strong>
           </div>
-          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+
+          <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 shadow-inner">
             <span className="text-[10px] text-slate-400 block">9K (גרם)</span>
             <strong className="text-slate-200 font-mono text-sm">₪{(gold24k * 0.375).toFixed(2)}</strong>
           </div>
         </div>
       </div>
 
-      {/* Quick Contact Picker Bar & Dealer Cumulative Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {/* Contact Picker Shortcut */}
-        <button
-          type="button"
-          onClick={onOpenContactPicker}
-          className="bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-amber-500/30 p-4 rounded-2xl flex items-center justify-between text-right transition-all group"
-        >
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20 group-hover:scale-105 transition-transform">
-              <BookUser className="w-5 h-5" />
+      {/* 2. Dealer Default Margin Input */}
+      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 shadow-xl space-y-3">
+        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+              <Percent className="w-4 h-4" />
             </div>
             <div>
-              <span className="text-xs font-bold text-white block group-hover:text-amber-300 transition-colors">
-                בחירת לקוח מאנשי הקשר
-              </span>
-              <span className="text-[11px] text-slate-400 block">
-                טען שם וטלפון לקבלה ישירות מהנייד
-              </span>
+              <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                <span>עמלת סוחר ברירת מחדל</span>
+                {marginSavedAnim && (
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 animate-in fade-in duration-200">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                    <span>נשמר!</span>
+                  </span>
+                )}
+              </h3>
+              <p className="text-[10px] text-slate-400">מוגדרת כברירת מחדל לכל העסקאות (ניתן לעדכן גם ספציפית בתוך העסקה)</p>
             </div>
           </div>
-          <ChevronLeft className="w-4 h-4 text-slate-500 group-hover:text-amber-400 transform group-hover:-translate-x-1 transition-all" />
-        </button>
+        </div>
 
-        {/* Total Deals Summary */}
-        <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex items-center justify-around text-center">
-          <div>
-            <span className="text-[10px] text-slate-400 block">עסקאות במערכת</span>
-            <strong className="text-lg font-black text-amber-400 font-mono">{totalDealsCount}</strong>
+        {/* Adjuster controls */}
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => handleMarginChange(marginInput - 0.5)}
+            className="w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xl flex items-center justify-center border border-slate-700 transition-all shadow"
+            title="הפחת עמלה ב-0.5%"
+          >
+            -
+          </button>
+
+          <div className="flex-1 bg-slate-950 border border-slate-700 focus-within:border-amber-400 rounded-xl py-1.5 px-3 text-center shadow-inner flex items-center justify-center gap-1.5">
+            <input
+              type="number"
+              step="0.5"
+              min="0"
+              max="50"
+              value={marginInput}
+              onChange={(e) => handleMarginChange(parseFloat(e.target.value) || 0)}
+              className="bg-transparent text-2xl font-black font-mono text-amber-300 text-center w-24 focus:outline-none"
+            />
+            <span className="text-amber-400 font-bold font-mono text-xl">%</span>
           </div>
-          <div className="w-px h-8 bg-slate-800"></div>
-          <div>
-            <span className="text-[10px] text-slate-400 block">זהב מצטבר</span>
-            <strong className="text-base font-black text-white font-mono">{totalWeightGrams.toFixed(1)}g</strong>
-          </div>
-          <div className="w-px h-8 bg-slate-800"></div>
-          <div>
-            <span className="text-[10px] text-slate-400 block">יהלומים B2B</span>
-            <strong className="text-base font-black text-cyan-300 font-mono">{totalDiamondCarats.toFixed(2)}ct</strong>
-          </div>
+
+          <button
+            type="button"
+            onClick={() => handleMarginChange(marginInput + 0.5)}
+            className="w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xl flex items-center justify-center border border-slate-700 transition-all shadow"
+            title="הוסף עמלה ב-0.5%"
+          >
+            +
+          </button>
+        </div>
+
+        {/* Presets */}
+        <div className="grid grid-cols-7 gap-1.5 pt-1">
+          {[0, 5, 8, 10, 12, 15, 20].map((preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => handleMarginChange(preset)}
+              className={`py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                marginInput === preset
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md scale-[1.02]'
+                  : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-800'
+              }`}
+            >
+              {preset}%
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Recent Deals */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-          <div className="flex items-center gap-2">
-            <History className="w-4 h-4 text-amber-400" />
-            <span className="text-xs font-bold text-slate-200">עסקאות אחרונות</span>
-          </div>
-          {history.length > 0 && (
-            <button
-              type="button"
-              onClick={onOpenHistory}
-              className="text-[11px] text-amber-400 hover:text-amber-300 font-bold"
-            >
-              הצג הכל ({history.length}) &larr;
-            </button>
-          )}
+      {/* 3. Deal Selection in a Scroll Window */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
+        <div className="border-b border-slate-800/80 pb-2">
+          <h3 className="text-xs sm:text-sm font-bold text-slate-200">בחר סוג עסקה חדשה:</h3>
+          <p className="text-[11px] text-slate-400">גלול ובחר את סוג הפריטים בעסקה</p>
         </div>
 
-        {recentDeals.length === 0 ? (
-          <div className="text-center py-6 space-y-2 bg-slate-950/40 rounded-xl border border-slate-800/60 p-4">
-            <p className="text-slate-400 text-xs font-bold">עדיין לא הוקלטו עסקאות במכשיר זה</p>
+        {/* Scrollable Deal Type Picker Window */}
+        <div className="max-h-56 overflow-y-auto space-y-2.5 p-1 no-scrollbar">
+          {/* Option A: Gold Deal */}
+          <div
+            onClick={() => setSelectedCategory('gold')}
+            className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+              selectedCategory === 'gold'
+                ? 'bg-amber-500/15 border-amber-500/60 shadow-lg shadow-amber-500/10'
+                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl border ${
+                selectedCategory === 'gold'
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold'
+                  : 'bg-slate-900 text-amber-400 border-slate-800'
+              }`}>
+                <Coins className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-black ${selectedCategory === 'gold' ? 'text-amber-300' : 'text-white'}`}>
+                    🪙 עסקת זהב
+                  </span>
+                  <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
+                    24K / 18K / 14K / 9K
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  שקילת זהב לפי קראט, חישוב ספוט בלייב בקיזוז עמלת הסוחר ({marginInput}%).
+                </p>
+              </div>
+            </div>
 
-            <div className="flex items-center justify-center gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => onStartNewDeal('gold')}
-                className="inline-flex items-center gap-1 text-xs text-amber-300 hover:text-amber-200 font-bold bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 rounded-xl transition-all"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>עסקת זהב</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => onStartNewDeal('diamond')}
-                className="inline-flex items-center gap-1 text-xs text-cyan-300 hover:text-cyan-200 font-bold bg-cyan-500/10 border border-cyan-500/20 px-3 py-1.5 rounded-xl transition-all"
-              >
-                <Gem className="w-3.5 h-3.5" />
-                <span>עסקת יהלומים</span>
-              </button>
+            <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+              selectedCategory === 'gold'
+                ? 'border-amber-400 bg-amber-500 text-slate-950'
+                : 'border-slate-700 bg-slate-900'
+            }`}>
+              {selectedCategory === 'gold' && <Check className="w-3.5 h-3.5 stroke-[3]" />}
             </div>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {recentDeals.map((deal) => (
-              <div
-                key={deal.id}
-                className="bg-slate-950 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between gap-3 text-xs"
-              >
-                <div>
-                  <strong className="text-white block font-bold">
-                    {deal.clientName || 'לקוח מזומן / סוחר'}
-                  </strong>
-                  <span className="text-[10px] text-slate-400 font-mono">
-                    {new Date(deal.date).toLocaleDateString('he-IL')} &bull; {deal.items?.length || 0} פריטים &bull; {deal.totals?.totalWeightGrams?.toFixed(1)}g
-                  </span>
-                </div>
 
-                <div className="flex items-center gap-1.5">
-                  <span className="font-mono font-bold text-amber-400 text-sm pl-1">
-                    ₪{deal.totals?.totalOfferPriceIls?.toLocaleString('he-IL')}
-                  </span>
-                  {onEditDeal && (
-                    <button
-                      type="button"
-                      onClick={() => onEditDeal(deal)}
-                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-300 border border-slate-700 rounded-lg transition-all"
-                      title="ערוך עסקה זו"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
-                    </button>
-                  )}
-                  {onViewDealReceipt && (
-                    <button
-                      type="button"
-                      onClick={() => onViewDealReceipt(deal)}
-                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-amber-400 border border-slate-700 rounded-lg transition-all"
-                      title="צפה בקבלה"
-                    >
-                      <FileText className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
+          {/* Option B: Diamond Deal */}
+          <div
+            onClick={() => setSelectedCategory('diamond')}
+            className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
+              selectedCategory === 'diamond'
+                ? 'bg-cyan-500/15 border-cyan-500/60 shadow-lg shadow-cyan-500/10'
+                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-xl border ${
+                selectedCategory === 'diamond'
+                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold'
+                  : 'bg-slate-900 text-cyan-400 border-slate-800'
+              }`}>
+                <Gem className="w-5 h-5" />
               </div>
-            ))}
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className={`text-sm font-black ${selectedCategory === 'diamond' ? 'text-cyan-300' : 'text-white'}`}>
+                    💎 עסקת יהלומים ותכשיטים
+                  </span>
+                  <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-bold">
+                    B2B &bull; אדם פרטי
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  תמחור רפפורט לסוחרים, קנייה מאדם פרטי או חבילות (פאקע).
+                </p>
+              </div>
+            </div>
+
+            <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+              selectedCategory === 'diamond'
+                ? 'border-cyan-400 bg-cyan-500 text-slate-950'
+                : 'border-slate-700 bg-slate-900'
+            }`}>
+              {selectedCategory === 'diamond' && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+            </div>
           </div>
-        )}
+        </div>
+
+        {/* Primary Action Button: Start Deal */}
+        <button
+          type="button"
+          onClick={() => onStartNewDeal(selectedCategory)}
+          className={`w-full py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-[0.98] ${
+            selectedCategory === 'gold'
+              ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-amber-500/25 border border-amber-300/40'
+              : 'bg-gradient-to-r from-cyan-500 via-blue-600 to-amber-500 hover:from-cyan-400 hover:to-amber-400 text-slate-950 shadow-cyan-500/25 border border-cyan-300/40'
+          }`}
+        >
+          <span>התחל {selectedCategory === 'gold' ? 'עסקת זהב' : 'עסקת יהלומים'}</span>
+          <ArrowLeft className="w-5 h-5 stroke-[3]" />
+        </button>
       </div>
     </div>
   );

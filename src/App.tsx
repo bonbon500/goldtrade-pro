@@ -13,7 +13,7 @@ import { DealerDashboard } from './components/DealerDashboard';
 import { PostItemChoiceModal } from './components/PostItemChoiceModal';
 import { AddItemModal } from './components/AddItemModal';
 import { TradeItem, RatesData, CartTotals, TradeDeal, BusinessSettings, GoldItem, DiamondItem, ItemCategory } from './types';
-import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail, Edit3, Settings } from 'lucide-react';
+import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail, Edit3, Settings, Percent } from 'lucide-react';
 import { getLiveGoldAndFxRates, getCachedGoldRates } from './utils/goldRates';
 
 const DEFAULT_SETTINGS: BusinessSettings = {
@@ -30,15 +30,23 @@ export default function App() {
 
   // Auto-scroll to top whenever moving between screens/steps (eliminates need to manually scroll up on mobile)
   useEffect(() => {
-    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-    if (document.documentElement) document.documentElement.scrollTop = 0;
-    if (document.body) document.body.scrollTop = 0;
-    const rafId = requestAnimationFrame(() => {
+    const scrollToPageTop = () => {
       window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
       if (document.documentElement) document.documentElement.scrollTop = 0;
       if (document.body) document.body.scrollTop = 0;
-    });
-    return () => cancelAnimationFrame(rafId);
+      const mainEl = document.querySelector('main');
+      if (mainEl) mainEl.scrollTop = 0;
+      const rootEl = document.getElementById('root');
+      if (rootEl) rootEl.scrollTop = 0;
+    };
+
+    scrollToPageTop();
+    const timeoutId = setTimeout(scrollToPageTop, 50);
+    const rafId = requestAnimationFrame(scrollToPageTop);
+    return () => {
+      clearTimeout(timeoutId);
+      cancelAnimationFrame(rafId);
+    };
   }, [activeStep, mode]);
 
   const [rates, setRates] = useState<RatesData | null>(() => {
@@ -76,6 +84,42 @@ export default function App() {
       return DEFAULT_SETTINGS;
     }
   });
+
+  // Deal-specific margin (initialized from default margin, but adjustable per deal)
+  const [dealMarginPercent, setDealMarginPercent] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('goldtrade_settings');
+      return saved ? JSON.parse(saved).defaultMarginPercent || 10 : 10;
+    } catch {
+      return 10;
+    }
+  });
+
+  // Sync dealMarginPercent when default changes
+  useEffect(() => {
+    setDealMarginPercent(settings.defaultMarginPercent);
+  }, [settings.defaultMarginPercent]);
+
+  const handleUpdateDealMargin = (newMargin: number) => {
+    const cleanMargin = Math.max(0, Math.min(50, Number(newMargin.toFixed(1))));
+    setDealMarginPercent(cleanMargin);
+    // Recalculate any existing gold items in cart to match this deal's margin
+    setCart((prev) =>
+      prev.map((item) => {
+        if (item.category === 'diamond') return item;
+        const goldItem = item as GoldItem;
+        const marginRatio = (100 - cleanMargin) / 100;
+        const offerPriceIls = Number((goldItem.rawValueIls * marginRatio).toFixed(2));
+        const profitIls = Number((goldItem.rawValueIls - offerPriceIls).toFixed(2));
+        return {
+          ...goldItem,
+          marginPercent: cleanMargin,
+          offerPriceIls,
+          profitIls,
+        };
+      })
+    );
+  };
 
   // Cart & Deals State
   const [cart, setCart] = useState<TradeItem[]>([]);
@@ -473,26 +517,18 @@ ${settings.dealerName} | ${settings.phone}`;
               <DealerDashboard
                 settings={settings}
                 rates={effectiveRates}
-                history={history}
                 onStartNewDeal={(category) => {
                   if (category) setActiveCalcCategory(category);
                   setActiveStep(1);
                 }}
-                onOpenHistory={() => setIsHistoryOpen(true)}
-                onOpenSettings={() => setIsSettingsOpen(true)}
-                onOpenRatesModal={() => setIsRatesModalOpen(true)}
-                onOpenContactPicker={() => setIsContactPickerOpen(true)}
-                onEditDeal={handleEditDeal}
-                onViewDealReceipt={(deal) => {
-                  setActiveClientInfo({
-                    name: deal.clientName,
-                    phone: deal.clientPhone,
-                    email: deal.clientEmail || '',
-                    notes: deal.clientNotes || '',
-                  });
-                  setCart(deal.items);
-                  setIsPdfReceiptOpen(true);
+                onUpdateDefaultMargin={(newMargin) => {
+                  const updated = { ...settings, defaultMarginPercent: newMargin };
+                  setSettings(updated);
+                  localStorage.setItem('goldtrade_settings', JSON.stringify(updated));
+                  setDealMarginPercent(newMargin);
                 }}
+                onOpenRatesModal={() => setIsRatesModalOpen(true)}
+                onOpenSettings={() => setIsSettingsOpen(true)}
               />
             )}
 
@@ -706,7 +742,62 @@ ${settings.dealerName} | ${settings.phone}`;
 
             {/* STEP 2: DEAL ITEMS ENTRY & CALCULATORS */}
             {activeStep === 2 && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
+                {/* Deal-Specific Margin Adjuster Bar */}
+                <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-3 sm:p-4 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30 shrink-0">
+                      <Percent className="w-4 h-4 sm:w-5 sm:h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs sm:text-sm font-bold text-white">עמלת סוחר לעסקה זו:</span>
+                        <span className="text-sm sm:text-base font-black text-amber-300 font-mono bg-slate-950 px-2.5 py-0.5 rounded-lg border border-slate-800">
+                          {dealMarginPercent}%
+                        </span>
+                      </div>
+                      <p className="text-[10px] sm:text-[11px] text-slate-400">
+                        קובע את אחוז הקיזוז מהספוט לעסקה זו (מתעדכן מיד לכל הפריטים)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 self-end sm:self-auto">
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateDealMargin(dealMarginPercent - 0.5)}
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center border border-slate-700 active:scale-95"
+                      title="הפחת 0.5%"
+                    >
+                      -
+                    </button>
+                    <div className="flex items-center gap-1">
+                      {[0, 5, 8, 10, 12, 15, 20].map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          onClick={() => handleUpdateDealMargin(val)}
+                          className={`px-2 py-1 rounded-lg text-xs font-bold transition-all border ${
+                            dealMarginPercent === val
+                              ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-sm scale-105'
+                              : 'bg-slate-950 text-slate-300 border-slate-800 hover:bg-slate-800'
+                          }`}
+                        >
+                          {val}%
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateDealMargin(dealMarginPercent + 0.5)}
+                      className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-white font-black text-base flex items-center justify-center border border-slate-700 active:scale-95"
+                      title="הוסף 0.5%"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+
                 {/* Category Selector Bar: Gold vs Diamond */}
                 <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-lg flex items-center gap-2">
                   <button
@@ -740,7 +831,7 @@ ${settings.dealerName} | ${settings.phone}`;
                 {activeCalcCategory === 'gold' ? (
                   <GoldCalculator
                     rates={effectiveRates}
-                    defaultMarginPercent={settings.defaultMarginPercent}
+                    defaultMarginPercent={dealMarginPercent}
                     onAddItem={handleAddItem}
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     cartCount={cart.length}

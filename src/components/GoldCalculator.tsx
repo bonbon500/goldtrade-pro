@@ -122,7 +122,6 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
     setWeightInput('');
     setItemNotes('');
     setItemPhotoUrl('');
-    scrollToCalcTop();
   };
 
   // Weight increment helper (supports 1g, 0.5g, 0.1g, 0.01g, 0.25g, etc.)

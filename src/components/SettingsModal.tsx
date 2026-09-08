@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Building, User, Phone, MapPin, Percent, Check, Palette, Image as ImageIcon, Upload, Trash2, Mail, FileText, Hash, ShieldCheck, RefreshCw, Download, Smartphone } from 'lucide-react';
+import { X, Save, Building, User, Phone, MapPin, Percent, Check, Image as ImageIcon, Upload, Trash2, Mail, FileText, Hash, ShieldCheck, RefreshCw, Download, Smartphone } from 'lucide-react';
 import { BusinessSettings } from '../types';
 
 interface SettingsModalProps {

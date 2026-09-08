@@ -1,5 +1,5 @@
 import React from 'react';
-import { Smartphone, Code, RefreshCw, Settings, History, ShieldCheck, Palette, Home } from 'lucide-react';
+import { Smartphone, Code, RefreshCw, Settings, History, ShieldCheck, Home } from 'lucide-react';
 import { RatesData, BusinessSettings } from '../types';
 
 interface HeaderNavbarProps {
@@ -51,7 +51,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
                   {settings.businessName || 'GoldTrade Pro'}
                 </h1>
                 <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-                  v2.4
+                  v2.5
                 </span>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-400 font-normal truncate max-w-[140px] sm:max-w-xs">
