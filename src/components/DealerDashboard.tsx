@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Coins, BookUser, History, FileText, ChevronLeft, Gem, ShoppingBag, Layers, ExternalLink, Edit3, Settings } from 'lucide-react';
+import { Plus, Coins, BookUser, History, FileText, ChevronLeft, Gem, ShoppingBag, Layers, ExternalLink, Edit3, Settings, Download, Smartphone } from 'lucide-react';
 import { TradeDeal, RatesData, BusinessSettings } from '../types';
 
 interface DealerDashboardProps {
@@ -155,6 +155,36 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
           </div>
           <ChevronLeft className="w-5 h-5 text-slate-500 group-hover:text-amber-400 transform group-hover:-translate-x-1 transition-all" />
         </div>
+
+        {/* Native Android APK Installer Card */}
+        <a
+          href="/GoldTrade-Pro.apk"
+          download="GoldTrade-Pro.apk"
+          className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 hover:from-emerald-900/50 hover:to-slate-850 border border-emerald-500/30 hover:border-emerald-400 p-4 rounded-2xl cursor-pointer transition-all group flex items-center justify-between sm:col-span-2 shadow-lg"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 text-emerald-400 rounded-xl border border-emerald-500/30 group-hover:scale-105 transition-transform shadow-inner">
+              <Smartphone className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white group-hover:text-emerald-300 transition-colors flex items-center gap-2">
+                  <span>הורד אפליקציה לאנדרואיד (קובץ התקנה APK)</span>
+                  <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold">
+                    התקנה ישירה למכשיר
+                  </span>
+                </h3>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                התקנה כאפליקציה אמיתית בנייד עם אייקון תכשיט זהב יוקרתי, ללא תלות בסימנייה של כרום.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-emerald-500/15 group-hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 px-3 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0">
+            <Download className="w-4 h-4" />
+            <span>הורד קובץ APK</span>
+          </div>
+        </a>
       </div>
 
       {/* Live Market Gold Rates Row */}

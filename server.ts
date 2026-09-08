@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
 const __filename = fileURLToPath(import.meta.url);
@@ -216,6 +217,23 @@ app.get('/api/version', (req, res) => {
     serverStartTime: SERVER_START_TIME,
     timestamp: Date.now(),
   });
+});
+
+// 3. Native Android APK Installer download endpoint
+app.get(['/download/apk', '/GoldTrade-Pro.apk'], (req, res) => {
+  const possiblePaths = [
+    path.join(__dirname, 'dist', 'GoldTrade-Pro.apk'),
+    path.join(__dirname, 'public', 'GoldTrade-Pro.apk'),
+    path.join(__dirname, 'GoldTrade-Pro.apk'),
+  ];
+  const targetPath = possiblePaths.find(p => fs.existsSync(p));
+  if (targetPath) {
+    res.setHeader('Content-Type', 'application/vnd.android.package-archive');
+    res.setHeader('Content-Disposition', 'attachment; filename="GoldTrade-Pro.apk"');
+    res.sendFile(targetPath);
+  } else {
+    res.status(404).send('קובץ ההתקנה APK אינו זמין כרגע.');
+  }
 });
 
 async function startServer() {

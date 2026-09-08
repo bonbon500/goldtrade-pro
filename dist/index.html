@@ -17,11 +17,18 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    <script type="module" crossorigin src="/assets/index-cnvCoono.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-CFWBN4o9.css">
+    <script type="module" crossorigin src="/assets/index-C4u9Jrw6.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DXEzRgN7.css">
   </head>
   <body class="bg-slate-950 text-slate-100 antialiased overflow-x-hidden">
     <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>
 

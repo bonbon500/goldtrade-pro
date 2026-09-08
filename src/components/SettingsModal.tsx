@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Building, User, Phone, MapPin, Percent, Check, Palette, Image as ImageIcon, Upload, Trash2, Mail, FileText, Hash, ShieldCheck, RefreshCw } from 'lucide-react';
+import { X, Save, Building, User, Phone, MapPin, Percent, Check, Palette, Image as ImageIcon, Upload, Trash2, Mail, FileText, Hash, ShieldCheck, RefreshCw, Download, Smartphone } from 'lucide-react';
 import { BusinessSettings } from '../types';
 
 interface SettingsModalProps {
@@ -318,6 +318,28 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   <span>רענן גרסה</span>
                 </button>
               )}
+            </div>
+
+            <div className="p-3 bg-gradient-to-r from-emerald-950/40 to-slate-950 rounded-xl border border-emerald-500/30 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-emerald-300 block flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4" />
+                  <span>קובץ התקנה מקורי לאנדרואיד (APK)</span>
+                </span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  קובץ התקנה מלא למכשיר עם אייקון תכשיט זהב יוקרתי, ללא תלות בדפדפן כרום
+                </span>
+              </div>
+
+              <a
+                href="/GoldTrade-Pro.apk"
+                download="GoldTrade-Pro.apk"
+                className="px-3 py-1.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/40 text-emerald-300 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 active:scale-95 shadow"
+                title="הורד קובץ התקנה למכשיר"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>הורד APK</span>
+              </a>
             </div>
           </div>
 
