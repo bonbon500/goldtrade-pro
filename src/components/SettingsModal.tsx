@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Save, Building, User, Phone, MapPin, Percent, Check, Palette, Image as ImageIcon, Upload, Trash2, Mail, FileText, Hash, ShieldCheck } from 'lucide-react';
+import { X, Save, Building, User, Phone, MapPin, Percent, Check, Palette, Image as ImageIcon, Upload, Trash2, Mail, FileText, Hash, ShieldCheck, RefreshCw } from 'lucide-react';
 import { BusinessSettings } from '../types';
 
 interface SettingsModalProps {
@@ -7,6 +7,7 @@ interface SettingsModalProps {
   onClose: () => void;
   settings: BusinessSettings;
   onSaveSettings: (newSettings: BusinessSettings) => void;
+  onForceUpdateApp?: () => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -14,6 +15,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   settings,
   onSaveSettings,
+  onForceUpdateApp,
 }) => {
   const [formData, setFormData] = useState<BusinessSettings>(settings);
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -340,6 +342,34 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <p className="text-[10px] text-slate-500 mt-1">
                 אם אינך מזין מפתח, המערכת משתמשת בשערים יציגים מורשים בזמן אמת.
               </p>
+            </div>
+          </div>
+
+          {/* Section 4: Mobile Version & Cache Refresh */}
+          <div className="space-y-3 pt-2">
+            <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block border-b border-slate-800 pb-1">
+              4. תחזוקת גרסה וזיכרון מטמון למובייל:
+            </span>
+
+            <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex items-center justify-between gap-3">
+              <div>
+                <span className="text-xs font-bold text-slate-200 block">עדכון גרסה למכשיר</span>
+                <span className="text-[10px] text-slate-400 block mt-0.5">
+                  נקה זיכרון מטמון (Cache) וטעון מיד את הגרסה העדכנית ביותר מהשרת
+                </span>
+              </div>
+
+              {onForceUpdateApp && (
+                <button
+                  type="button"
+                  onClick={onForceUpdateApp}
+                  className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 border border-amber-500/40 text-amber-300 rounded-xl text-xs font-bold transition-all shrink-0 flex items-center gap-1.5 active:scale-95"
+                  title="בצע רענון קשיח וניקוי מטמון"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  <span>רענן גרסה</span>
+                </button>
+              )}
             </div>
           </div>
 

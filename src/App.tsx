@@ -77,6 +77,55 @@ export default function App() {
   // Deal Editing Mode State
   const [editingDealId, setEditingDealId] = useState<string | null>(null);
   const [dealSavedFeedback, setDealSavedFeedback] = useState<string | null>(null);
+  const [serverUpdateAvailable, setServerUpdateAvailable] = useState<boolean>(false);
+
+  // Check for server updates (to ensure mobile device doesn't get stuck on old cached bundles)
+  useEffect(() => {
+    const checkServerVersion = async () => {
+      try {
+        const res = await fetch(`/api/version?_t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) {
+          const data = await res.json();
+          const storedServerTime = localStorage.getItem('goldtrade_server_start_time');
+          if (storedServerTime && data.serverStartTime && storedServerTime !== data.serverStartTime) {
+            setServerUpdateAvailable(true);
+          } else if (data.serverStartTime) {
+            localStorage.setItem('goldtrade_server_start_time', data.serverStartTime);
+          }
+        }
+      } catch (e) {
+        // offline or local dev
+      }
+    };
+
+    checkServerVersion();
+    window.addEventListener('focus', checkServerVersion);
+    return () => window.removeEventListener('focus', checkServerVersion);
+  }, []);
+
+  // Force Reload & Clear Mobile Cache
+  const handleForceUpdateApp = async () => {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        for (const reg of registrations) {
+          await reg.unregister();
+        }
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        for (const key of keys) {
+          await caches.delete(key);
+        }
+      }
+    } catch (e) {
+      console.warn('Cache clearing notice:', e);
+    }
+
+    // Force hard navigation with timestamp query parameter
+    localStorage.removeItem('goldtrade_server_start_time');
+    window.location.href = window.location.origin + window.location.pathname + '?_v=' + Date.now();
+  };
 
   // Modals visibility
   const [isPdfReceiptOpen, setIsPdfReceiptOpen] = useState(false);
@@ -369,9 +418,28 @@ ${settings.dealerName} | ${settings.phone}`;
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenHistory={() => setIsHistoryOpen(true)}
         onGoToDashboard={() => setActiveStep(0)}
+        onForceUpdateApp={handleForceUpdateApp}
         settings={settings}
         cartCount={cart.length}
       />
+
+      {/* New Server Version Available Floating Banner */}
+      {serverUpdateAvailable && (
+        <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2.5 shadow-xl flex items-center justify-between text-xs font-bold sticky top-14 sm:top-16 z-40 border-b border-amber-600">
+          <div className="flex items-center gap-2">
+            <span className="text-base animate-bounce">🚀</span>
+            <span>עודכנה גרסה חדשה בשרת (v2.2)! יש לרענן את המכשיר כדי לטעון אותה.</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleForceUpdateApp}
+            className="bg-slate-950 hover:bg-slate-900 text-amber-400 px-3 py-1.5 rounded-xl text-xs font-black shadow-lg transition-all active:scale-95 flex items-center gap-1.5 shrink-0"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>רענן עכשיו</span>
+          </button>
+        </div>
+      )}
 
       {/* Main Workspace */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-6">
@@ -986,7 +1054,10 @@ ${settings.dealerName} | ${settings.phone}`;
       </main>
 
       {/* Mobile Bottom Navigation Bar (Thumb-friendly field UI) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-2xl dir-rtl">
+      <nav
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-900/95 backdrop-blur-md border-t border-slate-800 px-2 py-1.5 flex items-center justify-around shadow-2xl dir-rtl"
+        style={{ paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 0px))' }}
+      >
         <button
           type="button"
           onClick={() => setActiveStep(0)}
@@ -1090,6 +1161,7 @@ ${settings.dealerName} | ${settings.phone}`;
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onSaveSettings={handleSaveSettings}
+        onForceUpdateApp={handleForceUpdateApp}
       />
 
       <LiveRatesModal

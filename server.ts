@@ -195,6 +195,9 @@ async function updateRatesEngine() {
 updateRatesEngine();
 setInterval(updateRatesEngine, 15000);
 
+const APP_VERSION = '2.2.0';
+const SERVER_START_TIME = new Date().toISOString();
+
 // 1. Live Gold & Exchange Rates API endpoint
 app.get('/api/rates', (req, res) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
@@ -203,6 +206,17 @@ app.get('/api/rates', (req, res) => {
   res.json(cachedRatesResponse);
 });
 
+// 2. Version and Health check endpoint (for mobile auto-update detection)
+app.get('/api/version', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.json({
+    version: APP_VERSION,
+    serverStartTime: SERVER_START_TIME,
+    timestamp: Date.now(),
+  });
+});
 
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
@@ -216,8 +230,24 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(__dirname, 'dist');
-    app.use(express.static(distPath));
+    // Serve static assets with cache headers, but NEVER cache HTML files
+    app.use(
+      express.static(distPath, {
+        maxAge: '1d',
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('.html')) {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+          }
+        },
+      })
+    );
+
     app.get('*', (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

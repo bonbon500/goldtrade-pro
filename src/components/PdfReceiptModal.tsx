@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { X, Printer, Download, Send, Copy, Check, ShieldCheck, CheckCircle2, FileText, FileCode, Image, Mail } from 'lucide-react';
+import { X, Printer, Download, Send, Copy, Check, ShieldCheck, CheckCircle2, FileText, FileCode, Image, Mail, Smartphone, Coins, Gem } from 'lucide-react';
 import { TradeItem, CartTotals, RatesData, BusinessSettings, DiamondItem } from '../types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -30,6 +30,7 @@ export const PdfReceiptModal: React.FC<PdfReceiptModalProps> = ({
   settings,
 }) => {
   const receiptRef = useRef<HTMLDivElement>(null);
+  const [docFormat, setDocFormat] = useState<'mobile' | 'a4'>('mobile');
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [copiedWhatsApp, setCopiedWhatsApp] = useState(false);
   const [copiedImage, setCopiedImage] = useState(false);
@@ -250,29 +251,37 @@ ${settings.businessName} - ${settings.address}`;
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const isMobile = docFormat === 'mobile';
+      const pdfWidth = isMobile ? 120 : 210;
+      const calculatedHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pdfHeight = isMobile ? Math.max(160, calculatedHeight + 6) : 297;
+
       const pdf = new jsPDF({
         orientation: 'p',
         unit: 'mm',
-        format: 'a4',
+        format: isMobile ? [pdfWidth, pdfHeight] : 'a4',
       });
 
-      const pdfWidth = 210;
-      const pageHeight = 297;
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width;
-
-      if (imgHeight <= pageHeight) {
-        pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
+      if (isMobile) {
+        pdf.addImage(imgData, 'JPEG', 0, 3, pdfWidth, calculatedHeight);
       } else {
-        // Multi-page or proportional fit without distorting aspect ratio
-        const scaleFactor = Math.min(1, (pageHeight - 10) / imgHeight);
-        const scaledWidth = pdfWidth * scaleFactor;
-        const scaledHeight = imgHeight * scaleFactor;
-        const xMargin = (pdfWidth - scaledWidth) / 2;
+        const pageHeight = 297;
+        const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-        pdf.addImage(imgData, 'JPEG', xMargin, 5, scaledWidth, scaledHeight);
+        if (imgHeight <= pageHeight) {
+          pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, imgHeight);
+        } else {
+          // Multi-page or proportional fit without distorting aspect ratio
+          const scaleFactor = Math.min(1, (pageHeight - 10) / imgHeight);
+          const scaledWidth = pdfWidth * scaleFactor;
+          const scaledHeight = imgHeight * scaleFactor;
+          const xMargin = (pdfWidth - scaledWidth) / 2;
+
+          pdf.addImage(imgData, 'JPEG', xMargin, 5, scaledWidth, scaledHeight);
+        }
       }
 
-      pdf.save(`קבלת_זהב_${(clientName || 'לקוח').replace(/\s+/g, '_')}_${dealId}.pdf`);
+      pdf.save(`קבלת_זהב_${isMobile ? 'סמארטפון_' : ''}${(clientName || 'לקוח').replace(/\s+/g, '_')}_${dealId}.pdf`);
     } catch (err) {
       console.error('PDF Canvas rendering error:', err);
       handleDownloadHtml();
@@ -347,6 +356,36 @@ ${settings.businessName} - ${settings.address}`;
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
+            {/* Document Format Selector: Mobile Card vs A4 Print */}
+            <div className="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
+              <button
+                type="button"
+                onClick={() => setDocFormat('mobile')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  docFormat === 'mobile'
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="פורמט מובייל - מותאם באופן מושלם לסמארטפונים ושיתוף בוואטסאפ"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>פורמט מובייל 📱</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setDocFormat('a4')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  docFormat === 'a4'
+                    ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+                title="פורמט A4 - מסמך טבלאי קלאסי להדפסה"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>פורמט A4 📄</span>
+              </button>
+            </div>
+
             {/* Toggle Include Item Photos in Document */}
             <button
               onClick={() => setIncludeItemPhotos(!includeItemPhotos)}
@@ -474,13 +513,226 @@ ${settings.businessName} - ${settings.address}`;
           </span>
         </div>
 
-        {/* PDF Printable Document Container (Styled like clean white paper invoice) */}
-        <div className="p-4 sm:p-8 overflow-y-auto bg-slate-950/80">
+        {/* PDF Printable Document Container (Styled like clean white paper invoice or mobile voucher) */}
+        <div className="p-3 sm:p-8 overflow-y-auto bg-slate-950/80">
           <div
             ref={receiptRef}
-            className="bg-white text-slate-900 rounded-xl p-6 sm:p-10 shadow-xl border border-slate-200 font-sans text-right dir-rtl max-w-2xl mx-auto"
-            style={{ minHeight: '600px' }}
+            className={
+              docFormat === 'mobile'
+                ? 'bg-white text-slate-900 rounded-2xl p-5 sm:p-6 shadow-2xl border border-amber-500/40 font-sans text-right dir-rtl max-w-md w-full mx-auto space-y-4'
+                : 'bg-white text-slate-900 rounded-xl p-6 sm:p-10 shadow-xl border border-slate-200 font-sans text-right dir-rtl max-w-2xl mx-auto'
+            }
+            style={docFormat === 'a4' ? { minHeight: '600px' } : undefined}
           >
+            {docFormat === 'mobile' ? (
+              /* ================= MOBILE DIGITAL RECEIPT VOUCHER FORMAT ================= */
+              <div className="space-y-4">
+                {/* Mobile Header */}
+                <div className="text-center border-b-2 border-amber-500 pb-3.5">
+                  {settings.logoUrl && (
+                    <div className="flex justify-center mb-2">
+                      <img
+                        src={settings.logoUrl}
+                        alt={settings.businessName || 'לוגו עסק'}
+                        className="max-h-16 max-w-[140px] object-contain rounded-lg border border-slate-200 p-1 bg-white shadow-sm"
+                      />
+                    </div>
+                  )}
+                  <h1 className="text-xl font-black text-amber-700 tracking-tight leading-tight">
+                    {settings.businessName || 'גולדטרייד - סחר בזהב'}
+                  </h1>
+                  <p className="text-xs text-slate-700 font-semibold mt-0.5">
+                    {settings.dealerName || 'סוחר מורשה קניית מתכות יקרות'}
+                    {settings.businessIdNumber && ` • ח.פ/ע.מ: ${settings.businessIdNumber}`}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-mono">
+                    טלפון: {settings.phone || '050-0000000'}
+                    {settings.businessEmail && ` • ${settings.businessEmail}`}
+                  </p>
+
+                  {/* Deal ID & Date Badge */}
+                  <div className="flex items-center justify-between bg-amber-50 border border-amber-300 rounded-xl px-3 py-1.5 mt-2.5 text-xs font-mono">
+                    <span className="font-black text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded">
+                      {dealId}
+                    </span>
+                    <span className="text-slate-600 font-bold">{dealDate}</span>
+                  </div>
+                </div>
+
+                {/* Mobile Client Box */}
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-500 font-medium">לכבוד הלקוח:</span>
+                    <strong className="text-slate-900 font-bold text-sm">{clientName || 'לקוח מזומן בשטח'}</strong>
+                  </div>
+                  {clientPhone && (
+                    <div className="flex justify-between items-center font-mono">
+                      <span className="text-slate-500">טלפון:</span>
+                      <span className="text-slate-800 font-bold">{clientPhone}</span>
+                    </div>
+                  )}
+                  {clientEmail && (
+                    <div className="flex justify-between items-center font-mono">
+                      <span className="text-slate-500">אימייל:</span>
+                      <span className="text-slate-800">{clientEmail}</span>
+                    </div>
+                  )}
+                  {clientNotes && (
+                    <div className="pt-1.5 mt-1 border-t border-slate-200 text-slate-600 text-[11px]">
+                      <span className="text-slate-400 font-bold block mb-0.5">הערות:</span>
+                      <span>{clientNotes}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Live Rates Snapshot */}
+                <div className="bg-amber-50/90 border border-amber-200 rounded-xl p-2.5 flex items-center justify-between text-xs">
+                  <div>
+                    <span className="text-[10px] text-amber-900 font-bold block">שערי ייחוס בעסקה:</span>
+                    <span className="text-slate-600 text-[11px] font-mono">
+                      XAU: <strong>${rates?.xauUsd?.toFixed(1) || '2685'}</strong> • USD: <strong>₪{rates?.usdIls?.toFixed(3) || '3.65'}</strong>
+                    </span>
+                  </div>
+                  <div className="text-left font-mono font-bold text-amber-900 text-xs">
+                    זהב 24K: ₪{rates?.gold24kPerGramIls?.toFixed(1) || '315'}/ג'
+                  </div>
+                </div>
+
+                {/* Mobile Items Cards Stack (Zero Horizontal Scrolling!) */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-xs font-bold text-slate-700 px-1">
+                    <span>פירוט פריטי העסקה ({cart.length}):</span>
+                    <span className="text-slate-500 font-mono text-[11px]">סה"כ משקל: {totals.totalWeightGrams.toFixed(2)}g</span>
+                  </div>
+
+                  {cart.map((item, idx) => {
+                    const isDiamond = item.category === 'diamond';
+                    const d = isDiamond ? (item as DiamondItem) : null;
+                    return (
+                      <div
+                        key={item.id}
+                        className="bg-slate-50 border border-slate-200/90 rounded-xl p-3 flex items-center justify-between gap-2.5 shadow-sm"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          {includeItemPhotos && item.itemPhotoUrl && (
+                            <img
+                              src={item.itemPhotoUrl}
+                              alt={item.name}
+                              style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', objectFit: 'cover' }}
+                              className="w-12 h-12 rounded-lg object-cover border border-amber-400 shrink-0"
+                            />
+                          )}
+                          <div>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span
+                                className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                                  isDiamond
+                                    ? 'bg-cyan-100 text-cyan-900 border border-cyan-300'
+                                    : 'bg-amber-100 text-amber-900 border border-amber-300'
+                                }`}
+                              >
+                                {isDiamond ? '💎 יהלום' : `${item.karat}K`}
+                              </span>
+                              <span className="font-bold text-xs text-slate-900">
+                                #{idx + 1} {item.name}
+                              </span>
+                            </div>
+
+                            {isDiamond && d ? (
+                              <div className="text-[10px] text-cyan-800 font-medium mt-0.5">
+                                {d.caratWeight.toFixed(2)}ct • {d.color}/{d.clarity} • {d.lab}
+                              </div>
+                            ) : (
+                              <div className="text-[11px] text-slate-600 font-mono mt-0.5">
+                                משקל: <strong className="text-slate-900 font-bold">{item.weightGrams.toFixed(2)} גרם</strong>
+                                {item.itemType ? ` (${item.itemType})` : ''}
+                              </div>
+                            )}
+                            {item.notes && (
+                              <div className="text-[10px] text-amber-800 italic mt-0.5">
+                                {item.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="text-left shrink-0 font-mono">
+                          <span className="font-black text-sm text-slate-900 block">
+                            ₪{item.offerPriceIls.toLocaleString('he-IL', { minimumFractionDigits: 2 })}
+                          </span>
+                          {isDiamond && d && (
+                            <span className="text-[10px] text-slate-500 block">(${d.totalPriceUsd})</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Mobile Photo Annex Gallery if Enabled */}
+                {includeItemPhotos && cart.some((i) => i.itemPhotoUrl) && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                    <span className="text-[11px] font-bold text-slate-800 block">צילומי פריטים בעסקה:</span>
+                    <div className="grid grid-cols-3 gap-2">
+                      {cart.map((item, idx) =>
+                        item.itemPhotoUrl ? (
+                          <div key={item.id} className="bg-white p-1 rounded-lg border border-slate-200 text-center">
+                            <img
+                              src={item.itemPhotoUrl}
+                              alt={item.name}
+                              className="w-full h-16 object-cover rounded-md mb-1"
+                            />
+                            <span className="text-[9px] font-bold text-slate-800 block truncate">#{idx + 1} {item.name}</span>
+                          </div>
+                        ) : null
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Mobile Grand Total Payout Card */}
+                <div className="bg-slate-900 text-white rounded-xl p-4 border-2 border-amber-500 text-center space-y-1 shadow-md">
+                  <span className="text-[11px] text-amber-300 font-bold uppercase tracking-wider block">
+                    סה"כ לתשלום סופי במזומן ללקוח:
+                  </span>
+                  <span className="text-3xl font-black text-amber-400 font-mono block">
+                    ₪{totals.totalOfferPriceIls.toLocaleString('he-IL', { minimumFractionDigits: 2 })}
+                  </span>
+                  <span className="text-[11px] text-slate-400 block font-mono">
+                    סה"כ משקל כולל: {totals.totalWeightGrams.toFixed(2)} גרם ({cart.length} פריטים)
+                  </span>
+                </div>
+
+                {/* Custom Business Document Footer Notes */}
+                {settings.documentFooterNotes && (
+                  <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 leading-relaxed text-center">
+                    <span className="font-bold text-slate-800 block mb-0.5 text-[11px]">הערות ותנאי מסחר:</span>
+                    <span>{settings.documentFooterNotes}</span>
+                  </div>
+                )}
+
+                {/* Signatures */}
+                <div className="border-t border-slate-200 pt-3 grid grid-cols-2 gap-4 text-xs text-slate-600">
+                  <div>
+                    <p className="font-bold text-slate-800 text-[11px]">חתימת הלקוח המוכר:</p>
+                    <p className="text-[10px] text-slate-400 mb-4">הזהב בבעלותי החוקית</p>
+                    <div className="border-b border-slate-400 w-full h-5"></div>
+                  </div>
+                  <div>
+                    <p className="font-bold text-slate-800 text-[11px]">חתימת הסוחר הקונה:</p>
+                    <p className="text-[10px] text-slate-400 mb-4">אושר ושולם במזומן</p>
+                    <div className="border-b border-slate-400 w-full h-5"></div>
+                  </div>
+                </div>
+
+                {/* Mobile Watermark */}
+                <div className="text-center text-[10px] text-slate-400 border-t border-slate-100 pt-2 font-mono">
+                  GoldTrade Pro • שובר דיגיטלי מותאם מובייל • {dealId}
+                </div>
+              </div>
+            ) : (
+              /* ================= CLASSIC A4 PRINTABLE DOCUMENT FORMAT ================= */
+              <div>
             {/* Business Header */}
             <div className="flex items-start justify-between border-b-2 border-amber-500 pb-4 mb-6">
               <div className="flex items-start gap-3.5">
@@ -721,6 +973,8 @@ ${settings.businessName} - ${settings.address}`;
             <div className="mt-8 text-center text-[10px] text-slate-400 border-t border-slate-100 pt-3">
               הופק באמצעות GoldTrade Pro &bull; מערכת תמכור וניהול עסקאות זהב בשטח &bull; {dealId}
             </div>
+          </div>
+        )}
           </div>
         </div>
       </div>

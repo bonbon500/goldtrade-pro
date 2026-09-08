@@ -12,6 +12,7 @@ interface HeaderNavbarProps {
   onOpenSettings: () => void;
   onOpenHistory: () => void;
   onGoToDashboard?: () => void;
+  onForceUpdateApp?: () => void;
   settings: BusinessSettings;
   cartCount: number;
 }
@@ -26,110 +27,98 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
   onOpenSettings,
   onOpenHistory,
   onGoToDashboard,
+  onForceUpdateApp,
   settings,
   cartCount,
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-slate-900 border-b border-amber-500/20 shadow-xl backdrop-blur-md bg-slate-900/95 text-slate-100">
       {/* Top Main Navigation Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Logo & Business Name */}
           <div
             onClick={onGoToDashboard}
-            className="flex items-center gap-3 cursor-pointer group"
+            className="flex items-center gap-2.5 cursor-pointer group"
             title="חזור לדשבורד הראשי"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300/30 group-hover:scale-105 transition-transform">
-              <span className="text-xl font-black text-slate-950 tracking-tighter">Au</span>
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-amber-400 via-amber-500 to-yellow-600 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300/30 group-hover:scale-105 transition-transform shrink-0">
+              <span className="text-lg sm:text-xl font-black text-slate-950 tracking-tighter">Au</span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-amber-300 tracking-tight leading-none group-hover:text-amber-200 transition-colors">
+              <div className="flex items-center gap-1.5">
+                <h1 className="text-sm sm:text-lg font-bold text-amber-300 tracking-tight leading-none group-hover:text-amber-200 transition-colors truncate max-w-[140px] sm:max-w-xs">
                   {settings.businessName || 'GoldTrade Pro'}
                 </h1>
-                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-1.5 py-0.5 rounded-full font-medium">
-                  FIELD VER. 2.5
+                <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                  v2.2
                 </span>
               </div>
-              <p className="text-xs text-slate-400 font-normal">
-                מערכת זהב בשטח &bull; {settings.dealerName || 'סוחר מורשה'}
+              <p className="text-[10px] sm:text-xs text-slate-400 font-normal truncate max-w-[140px] sm:max-w-xs">
+                {settings.dealerName || 'סוחר מורשה'}
               </p>
             </div>
           </div>
 
-          {/* Center Title Badge */}
-          <div className="hidden md:flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-400 bg-slate-800/60 border border-slate-700/60 px-3 py-1 rounded-full flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-amber-400"></span>
-              <span>מערכת מסחר ומחשבון שטח מקצועי</span>
-            </span>
-          </div>
-
           {/* Action Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            {/* Force Update / Refresh Button for Mobile Cache Clearing */}
+            {onForceUpdateApp && (
+              <button
+                type="button"
+                onClick={onForceUpdateApp}
+                id="btn-force-update"
+                className="flex items-center gap-1 bg-slate-800 hover:bg-slate-700 border border-amber-500/30 text-amber-300 px-2 sm:px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
+                title="נקה זיכרון מטמון ורענן לגרסה העדכנית ביותר מהשרת"
+              >
+                <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                <span className="text-[11px]">רענן גרסה</span>
+              </button>
+            )}
+
+            {/* Live Rates Badge Button */}
+            <button
+              onClick={onOpenRatesModal}
+              id="btn-open-rates-modal"
+              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
+              title="פתח לוח שערי זהב ודולר בלייב"
+            >
+              <span className="flex h-2 w-2 relative shrink-0">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span className="hidden sm:inline">שערי לייב</span>
+            </button>
+
+            {/* Desktop Only Buttons */}
             {onGoToDashboard && (
               <button
                 type="button"
                 onClick={onGoToDashboard}
                 id="btn-go-home"
-                className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs transition-all active:scale-95 shadow-md shadow-amber-500/20"
+                className="hidden md:flex items-center gap-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black px-3 py-1.5 rounded-xl text-xs transition-all active:scale-95 shadow-md shadow-amber-500/20"
                 title="דף הבית - חזור לדשבורד"
               >
                 <Home className="w-4 h-4 stroke-[2.5]" />
-                <span className="hidden sm:inline">דף הבית</span>
+                <span>דף הבית</span>
               </button>
             )}
 
             <button
-              onClick={onOpenRatesModal}
-              id="btn-open-rates-modal"
-              className="flex items-center gap-1.5 bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-all active:scale-95"
-              title="פתח לוח שערי זהב ודולר בלייב"
-            >
-              <span className="flex h-2 w-2 relative">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-              </span>
-              <span>שערי לייב</span>
-            </button>
-
-            <button
-              onClick={onRefreshRates}
-              disabled={loadingRates}
-              id="btn-refresh-rates"
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 p-2 sm:px-3 sm:py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 disabled:opacity-50"
-              title="רענן שערי זהב ודולר"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loadingRates ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">רענן</span>
-            </button>
-
-            <button
               onClick={onOpenHistory}
               id="btn-open-history"
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
+              className="hidden md:flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
               title="היסטוריית עסקאות"
             >
               <History className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">עסקאות</span>
-            </button>
-
-            <button
-              onClick={onOpenSettings}
-              id="btn-open-design-theme"
-              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 border border-amber-500/30 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95"
-              title="בחר סגנון עיצוב וערכת נושא"
-            >
-              <Palette className="w-3.5 h-3.5 text-amber-400" />
-              <span className="hidden sm:inline">סגנון עיצוב</span>
+              <span>עסקאות</span>
             </button>
 
             <button
               onClick={onOpenSettings}
               id="btn-open-settings"
-              className="flex items-center justify-center w-9 h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-all active:scale-95"
-              title="הגדרות סוחר ו-API"
+              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-all active:scale-95"
+              title="ניהול עסק ומערכת"
             >
               <Settings className="w-4 h-4 text-slate-300" />
             </button>
