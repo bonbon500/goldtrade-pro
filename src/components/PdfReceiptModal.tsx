@@ -77,7 +77,7 @@ export const PdfReceiptModal: React.FC<PdfReceiptModalProps> = ({
 
   // Raw summary message for WhatsApp
   const whatsappSummaryText = `שלום ${clientName || 'סוחר / לקוח יקר'},
-להלן סיכום הצעת המחיר לעסקה מאת ${settings.businessName}:
+להלן סיכום הצעת המחיר לעסקה מאת ${settings.businessName}${settings.businessIdNumber ? ` (ח.פ/ע.מ: ${settings.businessIdNumber})` : ''}:
 
 📄 *מספר עסקה:* ${dealId}
 📅 *תאריך:* ${dealDate}
@@ -91,9 +91,9 @@ ${photosHeader}
 *שערי ייחוס בעסקה:*
 • XAU/USD: $${rates?.xauUsd?.toFixed(2) || '3310.50'}
 • USD/ILS: ₪${rates?.usdIls?.toFixed(3) || '3.650'}
-
+${settings.documentFooterNotes ? `\n📌 *הערות:* ${settings.documentFooterNotes}\n` : ''}
 בברכה,
-${settings.dealerName} | ${settings.phone}`;
+${settings.dealerName} | ${settings.phone}${settings.businessEmail ? ` | ${settings.businessEmail}` : ''}`;
 
   const encodedText = encodeURIComponent(whatsappSummaryText);
   const waUrl = cleanPhone
@@ -145,7 +145,7 @@ ${settings.dealerName} | ${settings.phone}`;
     const subject = encodeURIComponent(`סיכום עסקת זהב ${dealId} - ${settings.businessName}`);
     const emailBody = `שלום ${clientName || 'סוחר / לקוח יקר'},
 
-להלן סיכום הצעת המחיר לעסקה מאת ${settings.businessName}:
+להלן סיכום הצעת המחיר לעסקה מאת ${settings.businessName}${settings.businessIdNumber ? ` (ח.פ/ע.מ: ${settings.businessIdNumber})` : ''}:
 
 מספר עסקה: ${dealId}
 תאריך: ${dealDate}
@@ -159,9 +159,9 @@ ${cart.map((item, i) => `${i + 1}. ${item.name} (${item.karat ? item.karat + 'K'
 שערי ייחוס בעסקה:
 • XAU/USD (זהב): $${rates?.xauUsd?.toFixed(2) || '---'}
 • USD/ILS (דולר): ₪${rates?.usdIls?.toFixed(3) || '---'}
-
+${settings.documentFooterNotes ? `\nהערות:\n${settings.documentFooterNotes}\n` : ''}
 בברכה,
-${settings.dealerName} | ${settings.phone}
+${settings.dealerName} | ${settings.phone}${settings.businessEmail ? ` | ${settings.businessEmail}` : ''}
 ${settings.businessName} - ${settings.address}`;
 
     const mailtoUrl = `mailto:${clientEmail || ''}?subject=${subject}&body=${encodeURIComponent(emailBody)}`;
@@ -483,14 +483,28 @@ ${settings.businessName} - ${settings.address}`;
           >
             {/* Business Header */}
             <div className="flex items-start justify-between border-b-2 border-amber-500 pb-4 mb-6">
-              <div>
-                <h1 className="text-2xl font-black text-amber-700 tracking-tight">
-                  {settings.businessName || 'גולדטרייד - קנייה ומכירת זהב'}
-                </h1>
-                <p className="text-xs text-slate-600 font-medium">
-                  {settings.dealerName || 'סוחר מורשה קניית מתכות יקרות'} &bull; טלפון: {settings.phone || '050-0000000'}
-                </p>
-                <p className="text-xs text-slate-500">{settings.address || 'ישראל'}</p>
+              <div className="flex items-start gap-3.5">
+                {settings.logoUrl && (
+                  <img
+                    src={settings.logoUrl}
+                    alt={settings.businessName || 'לוגו עסק'}
+                    className="max-h-16 max-w-[120px] object-contain rounded border border-slate-200 p-1 bg-white"
+                  />
+                )}
+                <div>
+                  <h1 className="text-2xl font-black text-amber-700 tracking-tight">
+                    {settings.businessName || 'גולדטרייד - קנייה ומכירת זהב'}
+                  </h1>
+                  <p className="text-xs text-slate-600 font-medium">
+                    {settings.dealerName || 'סוחר מורשה קניית מתכות יקרות'}
+                    {settings.businessIdNumber && ` • ע.מ / ח.פ: ${settings.businessIdNumber}`}
+                    {' • '}טלפון: {settings.phone || '050-0000000'}
+                  </p>
+                  <p className="text-xs text-slate-500">
+                    {settings.address || 'ישראל'}
+                    {settings.businessEmail && ` • אימייל: ${settings.businessEmail}`}
+                  </p>
+                </div>
               </div>
 
               <div className="text-left font-mono text-xs">
@@ -675,6 +689,14 @@ ${settings.businessName} - ${settings.address}`;
                 </span>
               </div>
             </div>
+
+            {/* Custom Business Document Footer Notes */}
+            {settings.documentFooterNotes && (
+              <div className="mb-6 p-3 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-700 leading-relaxed text-center">
+                <span className="font-bold text-slate-800 block mb-0.5">הערות ותנאי מסחר:</span>
+                <span>{settings.documentFooterNotes}</span>
+              </div>
+            )}
 
             {/* Signatures & Terms */}
             <div className="border-t border-slate-300 pt-6 mt-8 grid grid-cols-2 gap-8 text-xs text-slate-600">

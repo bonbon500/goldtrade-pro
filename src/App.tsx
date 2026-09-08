@@ -4,7 +4,6 @@ import { LiveRatesModal } from './components/LiveRatesModal';
 import { GoldCalculator } from './components/GoldCalculator';
 import { DiamondCalculator } from './components/DiamondCalculator';
 import { ShoppingCartView } from './components/ShoppingCartView';
-import { CameraOcrModal } from './components/CameraOcrModal';
 import { PdfReceiptModal } from './components/PdfReceiptModal';
 import { TradeHistoryModal } from './components/TradeHistoryModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -12,7 +11,7 @@ import { ContactPickerModal } from './components/ContactPickerModal';
 import { FlutterFlowSpecCenter } from './components/FlutterFlowSpecCenter';
 import { DealerDashboard } from './components/DealerDashboard';
 import { TradeItem, RatesData, CartTotals, TradeDeal, BusinessSettings, GoldItem, DiamondItem, ItemCategory } from './types';
-import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail } from 'lucide-react';
+import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail, Edit3 } from 'lucide-react';
 import { getLiveGoldAndFxRates, getCachedGoldRates } from './utils/goldRates';
 
 const DEFAULT_SETTINGS: BusinessSettings = {
@@ -75,11 +74,11 @@ export default function App() {
     }
   });
 
-  // Camera OCR weight bridge
-  const [scannedWeight, setScannedWeight] = useState<number | null>(null);
+  // Deal Editing Mode State
+  const [editingDealId, setEditingDealId] = useState<string | null>(null);
+  const [dealSavedFeedback, setDealSavedFeedback] = useState<string | null>(null);
 
   // Modals visibility
-  const [isOcrCameraOpen, setIsOcrCameraOpen] = useState(false);
   const [isPdfReceiptOpen, setIsPdfReceiptOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -236,28 +235,53 @@ export default function App() {
   const handleSaveDealToHistory = () => {
     if (cart.length === 0 || !rates) return;
 
-    const newDeal: TradeDeal = {
-      id: 'DEAL-' + Math.floor(100000 + Math.random() * 900000),
-      date: new Date().toLocaleDateString('he-IL', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-      clientName: activeClientInfo.name || 'לקוח מזומן בשטח',
-      clientPhone: activeClientInfo.phone,
-      clientEmail: activeClientInfo.email,
-      clientNotes: activeClientInfo.notes,
-      items: [...cart],
-      ratesSnapshot: rates,
-      totals,
-      businessName: settings.businessName,
-    };
+    let updatedHistory: TradeDeal[];
 
-    const updatedHistory = [newDeal, ...history];
+    if (editingDealId) {
+      // Update existing deal
+      updatedHistory = history.map((d) =>
+        d.id === editingDealId
+          ? {
+              ...d,
+              clientName: activeClientInfo.name || 'לקוח מזומן בשטח',
+              clientPhone: activeClientInfo.phone,
+              clientEmail: activeClientInfo.email,
+              clientNotes: activeClientInfo.notes,
+              items: [...cart],
+              ratesSnapshot: rates,
+              totals,
+              businessName: settings.businessName,
+            }
+          : d
+      );
+      setDealSavedFeedback('העסקה עודכנה בהצלחה!');
+    } else {
+      // Create new deal
+      const newDeal: TradeDeal = {
+        id: 'DEAL-' + Math.floor(100000 + Math.random() * 900000),
+        date: new Date().toLocaleDateString('he-IL', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+        clientName: activeClientInfo.name || 'לקוח מזומן בשטח',
+        clientPhone: activeClientInfo.phone,
+        clientEmail: activeClientInfo.email,
+        clientNotes: activeClientInfo.notes,
+        items: [...cart],
+        ratesSnapshot: rates,
+        totals,
+        businessName: settings.businessName,
+      };
+      updatedHistory = [newDeal, ...history];
+      setDealSavedFeedback('העסקה נשמרה בהצלחה!');
+    }
+
     setHistory(updatedHistory);
     localStorage.setItem('goldtrade_history', JSON.stringify(updatedHistory));
+    setTimeout(() => setDealSavedFeedback(null), 3500);
   };
 
   const handleDeleteHistoryDeal = (id: string) => {
@@ -305,15 +329,30 @@ ${settings.dealerName} | ${settings.phone}`;
     setActiveClientInfo({
       name: deal.clientName,
       phone: deal.clientPhone,
+      email: deal.clientEmail || '',
       notes: deal.clientNotes || '',
     });
     setIsHistoryOpen(false);
     setActiveStep(3); // Jump straight to deal summary
   };
 
+  const handleEditDeal = (deal: TradeDeal) => {
+    setCart(deal.items || []);
+    setActiveClientInfo({
+      name: deal.clientName || '',
+      phone: deal.clientPhone || '',
+      email: deal.clientEmail || '',
+      notes: deal.clientNotes || '',
+    });
+    setEditingDealId(deal.id);
+    setIsHistoryOpen(false);
+    setActiveStep(2); // Jump straight to items screen for editing
+  };
+
   const handleStartNewDeal = () => {
     setCart([]);
-    setActiveClientInfo({ name: '', phone: '', notes: '' });
+    setActiveClientInfo({ name: '', phone: '', email: '', notes: '' });
+    setEditingDealId(null);
     setActiveStep(1);
   };
 
@@ -354,10 +393,12 @@ ${settings.dealerName} | ${settings.phone}`;
                 onOpenSettings={() => setIsSettingsOpen(true)}
                 onOpenRatesModal={() => setIsRatesModalOpen(true)}
                 onOpenContactPicker={() => setIsContactPickerOpen(true)}
+                onEditDeal={handleEditDeal}
                 onViewDealReceipt={(deal) => {
                   setActiveClientInfo({
                     name: deal.clientName,
                     phone: deal.clientPhone,
+                    email: deal.clientEmail || '',
                     notes: deal.clientNotes || '',
                   });
                   setCart(deal.items);
@@ -434,6 +475,38 @@ ${settings.dealerName} | ${settings.phone}`;
                     })}
                   </div>
                 </div>
+
+                {/* Active Deal Editing Mode Indicator Banner */}
+                {editingDealId && (
+                  <div className="bg-amber-500/10 border border-amber-500/40 rounded-2xl p-3 flex items-center justify-between text-xs text-amber-300 shadow-lg">
+                    <div className="flex items-center gap-2.5">
+                      <span className="p-1.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                        <Edit3 className="w-4 h-4" />
+                      </span>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-amber-300">מצב עריכת עסקה:</span>
+                          <span className="font-mono bg-amber-500/25 px-2 py-0.5 rounded font-bold text-amber-200">{editingDealId}</span>
+                        </div>
+                        <span className="text-slate-400 text-[11px] block mt-0.5">
+                          השינויים שתבצע יישמרו ישירות על גבי עסקה זו בהיסטוריה
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingDealId(null);
+                        setCart([]);
+                        setActiveClientInfo({ name: '', phone: '', email: '', notes: '' });
+                        setActiveStep(0);
+                      }}
+                      className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl border border-slate-700 transition-all font-medium"
+                    >
+                      בטל עריכה
+                    </button>
+                  </div>
+                )}
               </>
             )}
 
@@ -580,9 +653,6 @@ ${settings.dealerName} | ${settings.phone}`;
                     rates={effectiveRates}
                     defaultMarginPercent={settings.defaultMarginPercent}
                     onAddItem={handleAddItem}
-                    onOpenOcrCamera={() => setIsOcrCameraOpen(true)}
-                    scannedWeight={scannedWeight}
-                    clearScannedWeight={() => setScannedWeight(null)}
                     onOpenSettings={() => setIsSettingsOpen(true)}
                     cartCount={cart.length}
                   />
@@ -855,8 +925,16 @@ ${settings.dealerName} | ${settings.phone}`;
                   </div>
                 </div>
 
+                {/* Success Feedback Alert */}
+                {dealSavedFeedback && (
+                  <div className="p-3 bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-2 shadow-lg">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                    <span>{dealSavedFeedback}</span>
+                  </div>
+                )}
+
                 {/* Primary Action Buttons */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2">
                   <button
                     type="button"
                     onClick={() => setIsPdfReceiptOpen(true)}
@@ -878,10 +956,14 @@ ${settings.dealerName} | ${settings.phone}`;
                   <button
                     type="button"
                     onClick={handleSaveDealToHistory}
-                    className="py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95"
+                    className={`py-3.5 px-4 font-bold text-xs rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 border ${
+                      editingDealId
+                        ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-400 font-black shadow-lg shadow-amber-500/20'
+                        : 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
+                    }`}
                   >
-                    <Save className="w-4 h-4 text-amber-400" />
-                    <span>שמור בעסקאות שמורות</span>
+                    <Save className={`w-4 h-4 ${editingDealId ? 'text-slate-950' : 'text-amber-400'}`} />
+                    <span>{editingDealId ? 'עדכן עסקה קיימת' : 'שמור בעסקאות שמורות'}</span>
                   </button>
                 </div>
 
@@ -981,12 +1063,6 @@ ${settings.dealerName} | ${settings.phone}`;
         }}
       />
 
-      <CameraOcrModal
-        isOpen={isOcrCameraOpen}
-        onClose={() => setIsOcrCameraOpen(false)}
-        onWeightExtracted={(weight) => setScannedWeight(weight)}
-      />
-
       <PdfReceiptModal
         isOpen={isPdfReceiptOpen}
         onClose={() => setIsPdfReceiptOpen(false)}
@@ -1006,6 +1082,7 @@ ${settings.dealerName} | ${settings.phone}`;
         history={history}
         onDeleteDeal={handleDeleteHistoryDeal}
         onSelectDeal={handleSelectHistoryDeal}
+        onEditDeal={handleEditDeal}
       />
 
       <SettingsModal

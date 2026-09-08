@@ -62,7 +62,7 @@ export async function fetchLiveGoldAndFxRates(): Promise<LiveGoldFxRates> {
       if (fxRes.ok) {
         const fxData = await fxRes.json();
         if (fxData && fxData.rates && fxData.rates.ILS) {
-          usdIls = Number(fxData.rates.ILS);
+          usdToIls = Number(fxData.rates.ILS);
         }
       }
     } catch (e) {

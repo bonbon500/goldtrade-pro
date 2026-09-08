@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Coins, BookUser, History, FileText, ChevronLeft, Gem, ShoppingBag, Layers, ExternalLink } from 'lucide-react';
+import { Plus, Coins, BookUser, History, FileText, ChevronLeft, Gem, ShoppingBag, Layers, ExternalLink, Edit3 } from 'lucide-react';
 import { TradeDeal, RatesData, BusinessSettings } from '../types';
 
 interface DealerDashboardProps {
@@ -12,6 +12,7 @@ interface DealerDashboardProps {
   onOpenRatesModal: () => void;
   onOpenContactPicker: () => void;
   onViewDealReceipt?: (deal: TradeDeal) => void;
+  onEditDeal?: (deal: TradeDeal) => void;
 }
 
 export const DealerDashboard: React.FC<DealerDashboardProps> = ({
@@ -23,6 +24,7 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
   onOpenRatesModal,
   onOpenContactPicker,
   onViewDealReceipt,
+  onEditDeal,
 }) => {
   const totalDealsCount = history.length;
   const totalWeightGrams = history.reduce((sum, d) => sum + (d.totals?.totalWeightGrams || 0), 0);
@@ -305,10 +307,20 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <span className="font-mono font-bold text-amber-400 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-mono font-bold text-amber-400 text-sm pl-1">
                     ₪{deal.totals?.totalOfferPriceIls?.toLocaleString('he-IL')}
                   </span>
+                  {onEditDeal && (
+                    <button
+                      type="button"
+                      onClick={() => onEditDeal(deal)}
+                      className="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-300 border border-slate-700 rounded-lg transition-all"
+                      title="ערוך עסקה זו"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                    </button>
+                  )}
                   {onViewDealReceipt && (
                     <button
                       type="button"

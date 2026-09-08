@@ -101,9 +101,12 @@ export interface TradeDeal {
 export interface BusinessSettings {
   businessName: string;
   dealerName: string;
+  businessIdNumber?: string; // מספר עוסק מורשה / ח.פ / ת.ז
+  businessEmail?: string;
   phone: string;
   address: string;
-  logoUrl?: string;
+  logoUrl?: string; // Base64 image data or URL
+  documentFooterNotes?: string; // הערות קבועות בתחתית הקבלה
   defaultMarginPercent: number;
   metalApiKey?: string;
   themeStyle?: 'luxury_gold' | 'modern_clean' | 'emerald_classic' | 'royal_dark';

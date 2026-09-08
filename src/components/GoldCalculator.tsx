@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Camera, Plus, Eye, EyeOff, Scale, Settings, Check, Image, FileText, ChevronDown } from 'lucide-react';
+import { Plus, Eye, EyeOff, Scale, Settings, Check, Image, FileText, ChevronDown } from 'lucide-react';
 import { RatesData, GoldItem } from '../types';
 
 interface GoldCalculatorProps {
   rates: RatesData | null;
   defaultMarginPercent: number;
   onAddItem: (item: GoldItem) => void;
-  onOpenOcrCamera: () => void;
-  scannedWeight: number | null;
-  clearScannedWeight: () => void;
   onOpenSettings?: () => void;
   cartCount?: number;
 }
@@ -36,9 +33,6 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
   rates,
   defaultMarginPercent,
   onAddItem,
-  onOpenOcrCamera,
-  scannedWeight,
-  clearScannedWeight,
   onOpenSettings,
   cartCount = 0,
 }) => {
@@ -46,7 +40,7 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
   const [selectedType, setSelectedType] = useState<string>('שרשרת');
   const [itemName, setItemName] = useState('שרשרת 14K');
   const [itemNotes, setItemNotes] = useState('');
-  const [weightInput, setWeightInput] = useState<string>('0');
+  const [weightInput, setWeightInput] = useState<string>(''); // Default empty string (no 0)
   const [marginPercent, setMarginPercent] = useState<number>(defaultMarginPercent);
   const [isDiscountEnabled, setIsDiscountEnabled] = useState<boolean>(true);
   const [showDealerPrivate, setShowDealerPrivate] = useState<boolean>(true);
@@ -57,14 +51,6 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
   useEffect(() => {
     setMarginPercent(defaultMarginPercent);
   }, [defaultMarginPercent]);
-
-  // Sync scanned weight from OCR Camera
-  useEffect(() => {
-    if (scannedWeight !== null && scannedWeight > 0) {
-      setWeightInput(scannedWeight.toString());
-      clearScannedWeight();
-    }
-  }, [scannedWeight, clearScannedWeight]);
 
   const handleSelectType = (typeStr: string) => {
     setSelectedType(typeStr);
@@ -132,7 +118,7 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
     setAddedSuccessAnim(true);
     setTimeout(() => setAddedSuccessAnim(false), 1500);
 
-    setWeightInput('0');
+    setWeightInput('');
     setItemNotes('');
     setItemPhotoUrl('');
     scrollToCalcTop();
@@ -191,41 +177,33 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
       </div>
 
       <div className="space-y-4">
-        {/* Karat Selection (ONLY 9, 14, 18, 24) - NO Purity Text */}
-        <div>
-          <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-2">
-            סוג קראט:
-          </label>
-          <div className="grid grid-cols-4 gap-2">
-            {ALLOWED_KARATS.map((k) => {
-              const isSelected = selectedKarat === k.karat;
-              return (
-                <button
-                  key={k.karat}
-                  type="button"
-                  onClick={() => handleKaratChange(k.karat)}
-                  className={`py-2.5 rounded-xl text-center font-black text-sm transition-all border ${
-                    isSelected
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20 scale-[1.02]'
-                      : 'bg-slate-950 border-slate-800 text-slate-300 hover:bg-slate-800'
-                  }`}
-                >
-                  {k.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Item Type & Custom Title */}
+        {/* Karat & Item Type Selection - Clean mobile dropdowns */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs font-bold text-slate-300 block mb-1.5">קראט הזהב:</label>
+            <div className="relative">
+              <select
+                value={selectedKarat}
+                onChange={(e) => handleKaratChange(Number(e.target.value))}
+                className="w-full bg-slate-950 border border-slate-800 text-amber-300 font-bold text-sm py-2.5 px-3 rounded-xl appearance-none focus:outline-none focus:border-amber-500 cursor-pointer shadow-inner"
+              >
+                {ALLOWED_KARATS.map((k) => (
+                  <option key={k.karat} value={k.karat} className="bg-slate-900 text-slate-100">
+                    {k.label} (זהב {k.karat}K)
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+          </div>
+
           <div>
             <label className="text-xs font-bold text-slate-300 block mb-1.5">סוג הפריט:</label>
             <div className="relative">
               <select
                 value={selectedType}
                 onChange={(e) => handleSelectType(e.target.value)}
-                className="w-full bg-slate-950 border border-slate-800 text-slate-100 font-bold text-xs py-2.5 px-3 rounded-xl appearance-none focus:outline-none focus:border-amber-500 cursor-pointer"
+                className="w-full bg-slate-950 border border-slate-800 text-slate-100 font-bold text-sm py-2.5 px-3 rounded-xl appearance-none focus:outline-none focus:border-amber-500 cursor-pointer shadow-inner"
               >
                 {ITEM_TYPES.map((t) => (
                   <option key={t} value={t} className="bg-slate-900 text-slate-100">
@@ -236,54 +214,50 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
               <ChevronDown className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
-
-          <div>
-            <label className="text-xs font-bold text-slate-300 block mb-1.5">כותרת הפריט:</label>
-            <input
-              type="text"
-              value={itemName}
-              onChange={(e) => setItemName(e.target.value)}
-              placeholder="שם הפריט..."
-              className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-xs text-slate-100 focus:outline-none"
-            />
-          </div>
         </div>
 
-        {/* Weight Section (Manual Entry + Increments for 1g, 0.5g, 0.1g, 0.01g & small fractions) */}
+        {/* Custom Item Title */}
+        <div>
+          <label className="text-xs font-bold text-slate-300 block mb-1.5">כותרת הפריט (שם שיופיע בקבלה):</label>
+          <input
+            type="text"
+            value={itemName}
+            onChange={(e) => setItemName(e.target.value)}
+            placeholder="שם הפריט..."
+            className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-xs text-slate-100 focus:outline-none"
+          />
+        </div>
+
+        {/* Weight Section (Manual Entry + Increments) */}
         <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 space-y-3">
           <div className="flex items-center justify-between">
             <label className="text-xs font-bold text-amber-400 uppercase tracking-wider">
               משקל בגרמים:
             </label>
-            <span className="text-[10px] text-slate-400">הקלד או השתמש בלחצני הוספה</span>
+            {weightInput && (
+              <button
+                type="button"
+                onClick={() => setWeightInput('')}
+                className="text-[11px] text-red-400 hover:text-red-300 underline transition-all"
+              >
+                נקה משקל
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                value={weightInput}
-                onChange={(e) => setWeightInput(e.target.value)}
-                placeholder="0.00"
-                className="w-full bg-slate-900 border-2 border-slate-700 focus:border-amber-400 rounded-xl py-2 px-3.5 text-2xl font-black text-amber-300 font-mono focus:outline-none pl-12"
-              />
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                גרם
-              </span>
-            </div>
-
-            {/* OCR Camera Trigger */}
-            <button
-              type="button"
-              onClick={onOpenOcrCamera}
-              className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-300 font-bold px-3 py-2.5 rounded-xl text-xs flex items-center gap-1.5 transition-all shrink-0"
-              title="סרוק משקל ממאזניים"
-            >
-              <Camera className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">סרוק</span>
-            </button>
+          <div className="relative">
+            <input
+              type="number"
+              step="any"
+              min="0"
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
+              placeholder="הזן משקל בגרם (לדוגמה: 14.85)"
+              className="w-full bg-slate-900 border-2 border-slate-700 focus:border-amber-400 rounded-xl py-2.5 px-3.5 text-2xl font-black text-amber-300 font-mono focus:outline-none pl-12 placeholder:text-sm placeholder:font-sans placeholder:text-slate-500"
+            />
+            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+              גרם
+            </span>
           </div>
 
           {/* Direct Weight Increment Buttons: 1g, 0.5g, 0.1g, 0.01g & Small Fraction Additions */}

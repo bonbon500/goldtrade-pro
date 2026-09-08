@@ -2,8 +2,6 @@ import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI, Type } from '@google/genai';
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -12,20 +10,6 @@ const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3002;
 
 // Body parser
 app.use(express.json({ limit: '20mb' }));
-
-// Helper to initialize Gemini
-function getGeminiClient() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) return null;
-  return new GoogleGenAI({
-    apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      },
-    },
-  });
-}
 
 let cachedRatesResponse: any = {
   success: true,
@@ -219,98 +203,6 @@ app.get('/api/rates', (req, res) => {
   res.json(cachedRatesResponse);
 });
 
-// 2. Camera OCR Scale Reader API endpoint using Gemini Vision
-app.post('/api/ocr-scale', async (req, res) => {
-  try {
-    const { imageBase64 } = req.body;
-    if (!imageBase64) {
-      return res.status(400).json({ success: false, error: 'imageBase64 parameter is required' });
-    }
-
-    const ai = getGeminiClient();
-    if (!ai) {
-      // Return simulated scale OCR if API key is not configured
-      return res.json({
-        success: true,
-        data: {
-          weight: 24.85,
-          unit: 'g',
-          confidence: 'high',
-          rawText: '24.85 g',
-          notes: 'Simulated OCR result (No Gemini API Key provided)',
-        }
-      });
-    }
-
-    // Format base64 image data
-    let cleanBase64 = imageBase64;
-    let mimeType = 'image/jpeg';
-    if (imageBase64.includes(';base64,')) {
-      const parts = imageBase64.split(';base64,');
-      mimeType = parts[0].replace('data:', '');
-      cleanBase64 = parts[1];
-    }
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: {
-        parts: [
-          {
-            inlineData: {
-              data: cleanBase64,
-              mimeType,
-            },
-          },
-          {
-            text: `Extract the digital scale weight reading from this image.
-Focus on the main numeric display of the digital scale.
-Return a valid JSON object matching this structure:
-{
-  "weight": number or null if not readable,
-  "unit": "g" | "oz" | "dwt" | "ct",
-  "confidence": "high" | "medium" | "low",
-  "rawText": "exact text seen on scale display",
-  "notes": "brief Hebrew explanation of display content"
-}`
-          }
-        ]
-      },
-      config: {
-        responseMimeType: 'application/json',
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            weight: { type: Type.NUMBER, description: 'Numeric weight reading extracted' },
-            unit: { type: Type.STRING, description: 'Weight unit (g, oz, dwt, ct)' },
-            confidence: { type: Type.STRING, description: 'Confidence level' },
-            rawText: { type: Type.STRING, description: 'Exact string on scale LCD' },
-            notes: { type: Type.STRING, description: 'Notes or warnings' },
-          },
-          required: ['rawText'],
-        }
-      }
-    });
-
-    const jsonText = response.text || '{}';
-    let parsedData;
-    try {
-      parsedData = JSON.parse(jsonText);
-    } catch {
-      parsedData = { rawText: jsonText, weight: null };
-    }
-
-    res.json({
-      success: true,
-      data: parsedData,
-    });
-  } catch (error: any) {
-    console.error('Scale OCR Error:', error);
-    res.status(500).json({
-      success: false,
-      error: error.message || 'Scale OCR process failed',
-    });
-  }
-});
 
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {

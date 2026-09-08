@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Search, Trash2, ExternalLink, Calendar, User, Phone, Coins, FileText, Send } from 'lucide-react';
+import { X, Search, Trash2, ExternalLink, Calendar, User, Phone, Coins, FileText, Send, Edit3 } from 'lucide-react';
 import { TradeDeal } from '../types';
 
 interface TradeHistoryModalProps {
@@ -8,6 +8,7 @@ interface TradeHistoryModalProps {
   history: TradeDeal[];
   onDeleteDeal: (id: string) => void;
   onSelectDeal: (deal: TradeDeal) => void;
+  onEditDeal: (deal: TradeDeal) => void;
 }
 
 export const TradeHistoryModal: React.FC<TradeHistoryModalProps> = ({
@@ -16,6 +17,7 @@ export const TradeHistoryModal: React.FC<TradeHistoryModalProps> = ({
   history,
   onDeleteDeal,
   onSelectDeal,
+  onEditDeal,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -39,7 +41,7 @@ export const TradeHistoryModal: React.FC<TradeHistoryModalProps> = ({
             <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
               היסטוריית עסקאות שטח שנשמרו ({history.length})
             </h3>
-            <p className="text-xs text-slate-400">תיעוד עסקאות קודמות, פתיחת קבלות ושליחה חוזרת</p>
+            <p className="text-xs text-slate-400">תיעוד עסקאות קודמות, עריכת עסקאות, פתיחת קבלות ושליחה חוזרת</p>
           </div>
 
           <button
@@ -114,14 +116,23 @@ export const TradeHistoryModal: React.FC<TradeHistoryModalProps> = ({
                     <span className="text-[10px] text-slate-500">תשלום במזומן</span>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => onEditDeal(deal)}
+                      className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-amber-300 rounded-lg border border-slate-700 text-xs font-semibold flex items-center gap-1 transition-all"
+                      title="ערוך עסקה זו"
+                    >
+                      <Edit3 className="w-3.5 h-3.5 text-amber-400" />
+                      <span>ערוך</span>
+                    </button>
+
                     <button
                       onClick={() => onSelectDeal(deal)}
                       className="p-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 rounded-lg border border-amber-500/20 text-xs font-semibold flex items-center gap-1 transition-all"
-                      title="טען עסקה לסל"
+                      title="הצג קבלה ומסמך"
                     >
                       <ExternalLink className="w-3.5 h-3.5" />
-                      <span>הצג קבלה</span>
+                      <span>קבלה</span>
                     </button>
 
                     <button

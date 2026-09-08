@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { X, Save, Key, Building, User, Phone, MapPin, Percent, Check, Palette, Sparkles } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Save, Building, User, Phone, MapPin, Percent, Check, Palette, Image as ImageIcon, Upload, Trash2, Mail, FileText, Hash, ShieldCheck } from 'lucide-react';
 import { BusinessSettings } from '../types';
 
 interface SettingsModalProps {
@@ -17,8 +17,25 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 }) => {
   const [formData, setFormData] = useState<BusinessSettings>(settings);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData((prev) => ({ ...prev, logoUrl: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setFormData((prev) => ({ ...prev, logoUrl: undefined }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,15 +48,20 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-      <div className="bg-slate-900 border border-amber-500/40 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md dir-rtl">
+      <div className="bg-slate-900 border border-amber-500/40 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
         {/* Header */}
         <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
-              הגדרות סוחר, מיתוג וספקי API
-            </h3>
-            <p className="text-xs text-slate-400">התאם את פרטי העסק והמפתחות לקבלת שערים בזמן אמת</p>
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+              <Building className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
+                ניהול עסק ומערכת (פרטי סוחר ומסמכים)
+              </h3>
+              <p className="text-xs text-slate-400">הגדר לוגו, פרטי עוסק, עמלות והערות שיופיעו במסמכים</p>
+            </div>
           </div>
 
           <button
@@ -116,14 +138,83 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               1. פרטי מיתוג וזהות העסק (למסמכים וקבלות):
             </span>
 
+            {/* Logo Upload */}
             <div>
-              <label className="block text-slate-400 mb-1">שם העסק / מיתוג:</label>
-              <input
-                type="text"
-                value={formData.businessName}
-                onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none"
-              />
+              <label className="block text-slate-400 mb-1.5 flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                <span>לוגו העסק (יופיע בראש קבלות ומסמכים):</span>
+              </label>
+              
+              <div className="flex items-center gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800">
+                {formData.logoUrl ? (
+                  <div className="relative group">
+                    <img
+                      src={formData.logoUrl}
+                      alt="לוגו עסק"
+                      className="w-16 h-16 object-contain bg-white/5 rounded-lg border border-slate-700 p-1"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRemoveLogo}
+                      className="absolute -top-1.5 -right-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-full p-1 shadow-md transition-all"
+                      title="הסר לוגו"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="w-16 h-16 rounded-lg border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-500 bg-slate-900/50">
+                    <ImageIcon className="w-5 h-5 mb-0.5 opacity-50" />
+                    <span className="text-[9px]">אין לוגו</span>
+                  </div>
+                )}
+
+                <div className="flex-1 space-y-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    onChange={handleLogoUpload}
+                    className="hidden"
+                    id="logo-file-input"
+                  />
+                  <label
+                    htmlFor="logo-file-input"
+                    className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-semibold transition-all"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    <span>{formData.logoUrl ? 'החלף קובץ לוגו' : 'העלה לוגו מהמכשיר'}</span>
+                  </label>
+                  <p className="text-[10px] text-slate-500">תומך ב-PNG, JPG, SVG. התמונה נשמרת אוטומטית במכשיר.</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-slate-400 mb-1">שם העסק / מיתוג:</label>
+                <input
+                  type="text"
+                  value={formData.businessName}
+                  onChange={(e) => setFormData({ ...formData, businessName: e.target.value })}
+                  placeholder="למשל: גולדטרייד ירושלים"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                  <Hash className="w-3 h-3 text-amber-400" />
+                  <span>עוסק מורשה / ח.פ:</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.businessIdNumber || ''}
+                  onChange={(e) => setFormData({ ...formData, businessIdNumber: e.target.value })}
+                  placeholder="למשל: 512345678"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none font-mono text-left dir-ltr"
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2.5">
@@ -148,13 +239,43 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-2.5">
+              <div>
+                <label className="block text-slate-400 mb-1">כתובת העסק / סניף:</label>
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                  <Mail className="w-3 h-3 text-amber-400" />
+                  <span>אימייל העסק:</span>
+                </label>
+                <input
+                  type="email"
+                  value={formData.businessEmail || ''}
+                  onChange={(e) => setFormData({ ...formData, businessEmail: e.target.value })}
+                  placeholder="dealer@gold.co.il"
+                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none text-left dir-ltr"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-slate-400 mb-1">כתובת העסק / סניף:</label>
-              <input
-                type="text"
-                value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none"
+              <label className="block text-slate-400 mb-1 flex items-center gap-1">
+                <FileText className="w-3 h-3 text-amber-400" />
+                <span>הערות קבועות בתחתית הקבלה (תנאים, תודה, פרטי העברה בנקאית):</span>
+              </label>
+              <textarea
+                rows={2}
+                value={formData.documentFooterNotes || ''}
+                onChange={(e) => setFormData({ ...formData, documentFooterNotes: e.target.value })}
+                placeholder="למשל: תודה על שבחרתם בנו. התשלום בוצע בהעברה בנקאית / מזומן בהתאם לחוק המזומן."
+                className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none resize-none"
               />
             </div>
           </div>
