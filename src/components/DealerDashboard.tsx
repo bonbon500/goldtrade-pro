@@ -1,5 +1,5 @@
 import React from 'react';
-import { Plus, Coins, BookUser, History, FileText, ChevronLeft, Gem, ShoppingBag, Layers, ExternalLink, Edit3 } from 'lucide-react';
+import { Plus, Coins, BookUser, History, FileText, ChevronLeft, Gem, ShoppingBag, Layers, ExternalLink, Edit3, Settings } from 'lucide-react';
 import { TradeDeal, RatesData, BusinessSettings } from '../types';
 
 interface DealerDashboardProps {
@@ -21,6 +21,7 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
   history,
   onStartNewDeal,
   onOpenHistory,
+  onOpenSettings,
   onOpenRatesModal,
   onOpenContactPicker,
   onViewDealReceipt,
@@ -127,6 +128,32 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
             </div>
           </div>
           <ChevronLeft className="w-5 h-5 text-slate-500 group-hover:text-cyan-400 transform group-hover:-translate-x-1 transition-all" />
+        </div>
+
+        {/* Dealer Settings Shortcut Card */}
+        <div
+          onClick={onOpenSettings}
+          className="bg-slate-900 hover:bg-slate-850 border border-amber-500/30 hover:border-amber-400 p-4 rounded-2xl cursor-pointer transition-all group flex items-center justify-between sm:col-span-2 shadow-lg"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-gradient-to-br from-amber-500/20 to-amber-600/10 text-amber-400 rounded-xl border border-amber-500/30 group-hover:scale-105 transition-transform shadow-inner">
+              <Settings className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-white group-hover:text-amber-300 transition-colors">
+                  הגדרות סוחר ופרטי עסק
+                </h3>
+                <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-full font-bold">
+                  עמלת ברירת מחדל ({settings.defaultMarginPercent}%) &bull; לוגו &bull; ח.פ
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                הגדרת עמלת סוחר קבועה, לוגו העסק, שם הסוחר, טלפון, ח.פ והערות לקבלות.
+              </p>
+            </div>
+          </div>
+          <ChevronLeft className="w-5 h-5 text-slate-500 group-hover:text-amber-400 transform group-hover:-translate-x-1 transition-all" />
         </div>
       </div>
 

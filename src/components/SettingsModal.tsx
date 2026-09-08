@@ -60,9 +60,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
             <div>
               <h3 className="text-sm sm:text-base font-bold text-slate-100 flex items-center gap-2">
-                ניהול עסק ומערכת (פרטי סוחר ומסמכים)
+                הגדרות סוחר וניהול עסק
               </h3>
-              <p className="text-xs text-slate-400">הגדר לוגו, פרטי עוסק, עמלות והערות שיופיעו במסמכים</p>
+              <p className="text-xs text-slate-400">עמלת ברירת מחדל, פרטי עסק ומיתוג, לוגו והערות למסמכים</p>
             </div>
           </div>
 
@@ -76,68 +76,56 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-5 overflow-y-auto space-y-5 text-xs text-slate-200">
-          {/* Design Style Selection Section */}
-          <div className="space-y-3 bg-slate-950/60 p-3.5 rounded-xl border border-amber-500/30">
+          {/* Section 1: Dealer Margin (Top Priority) */}
+          <div className="space-y-3 bg-slate-950/80 p-4 rounded-xl border border-amber-500/30 shadow-inner">
             <span className="text-xs font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
-              <Palette className="w-4 h-4 text-amber-400" />
-              <span>סגנון עיצוב וערכת נושא לאפליקציה:</span>
+              <Percent className="w-4 h-4 text-amber-400" />
+              <span>1. הגדרת עמלת סוחר ברירת מחדל (Default Margin %):</span>
             </span>
 
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              {[
-                {
-                  id: 'luxury_gold',
-                  title: 'זהב יוקרתי (Dark Gold)',
-                  desc: 'עיצוב כהה מהודר, מסגרות אוקטן וזהב מוברש',
-                  badgeBg: 'bg-amber-500/20 text-amber-300 border-amber-500/40',
-                },
-                {
-                  id: 'modern_clean',
-                  title: 'מודרני נקי (Ivory Light)',
-                  desc: 'רקע בהיר, טיפוגרפיה חדה וגבהים נקיים',
-                  badgeBg: 'bg-slate-100 text-slate-900 border-slate-300 font-bold',
-                },
-                {
-                  id: 'emerald_classic',
-                  title: 'אמרלד ירוק (Emerald Gold)',
-                  desc: 'מראה בורסה ירוק קלאסי לסחר בזהב',
-                  badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-                },
-                {
-                  id: 'royal_dark',
-                  title: 'רויאל סלייט (Slate Dark)',
-                  desc: 'מראה הייטק שחור-פחם מינימליסטי',
-                  badgeBg: 'bg-sky-500/20 text-sky-300 border-sky-500/40',
-                },
-              ].map((style) => {
-                const isSelected = (formData.themeStyle || 'luxury_gold') === style.id;
-                return (
-                  <button
-                    key={style.id}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, themeStyle: style.id as any })}
-                    className={`p-2.5 rounded-xl border text-right transition-all flex flex-col justify-between ${
-                      isSelected
-                        ? 'bg-amber-500/10 border-amber-400 ring-2 ring-amber-400/40 shadow-lg'
-                        : 'bg-slate-950/80 border-slate-800 hover:border-slate-700 text-slate-400'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between w-full mb-1">
-                      <span className={`text-[11px] font-bold ${isSelected ? 'text-amber-300' : 'text-slate-200'}`}>
-                        {style.title}
-                      </span>
-                      {isSelected && <Check className="w-3.5 h-3.5 text-amber-400 stroke-[3]" />}
-                    </div>
-                    <p className="text-[10px] text-slate-400 leading-snug">{style.desc}</p>
-                  </button>
-                );
-              })}
+            <div>
+              <label className="block text-slate-400 mb-1">
+                אחוז עמלת הסוחר המנוכה משער הספוט היציג (הרווח שלך):
+              </label>
+              <div className="flex items-center gap-2 mb-2.5">
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max="50"
+                  value={formData.defaultMarginPercent}
+                  onChange={(e) => setFormData({ ...formData, defaultMarginPercent: parseFloat(e.target.value) || 0 })}
+                  className="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-xl py-2 px-3 text-amber-300 font-mono font-black text-xl focus:outline-none shadow-inner"
+                />
+                <span className="text-amber-400 font-bold font-mono text-base">%</span>
+              </div>
+
+              {/* Quick Presets Buttons */}
+              <div className="space-y-1">
+                <span className="text-[10px] text-slate-400 block">בחירה מהירה:</span>
+                <div className="grid grid-cols-7 gap-1.5">
+                  {[0, 5, 8, 10, 12, 15, 20].map((preset) => (
+                    <button
+                      key={preset}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, defaultMarginPercent: preset })}
+                      className={`py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                        formData.defaultMarginPercent === preset
+                          ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md'
+                          : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                      }`}
+                    >
+                      {preset}%
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="space-y-3">
             <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block border-b border-slate-800 pb-1">
-              1. פרטי מיתוג וזהות העסק (למסמכים וקבלות):
+              2. פרטי מיתוג וזהות העסק (למסמכים וקבלות):
             </span>
 
             {/* Logo Upload */}
@@ -279,46 +267,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 placeholder="למשל: תודה על שבחרתם בנו. התשלום בוצע בהעברה בנקאית / מזומן בהתאם לחוק המזומן."
                 className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-slate-100 focus:outline-none resize-none"
               />
-            </div>
-          </div>
-
-          <div className="space-y-3 pt-2">
-            <span className="text-xs font-bold text-amber-300 uppercase tracking-wider block border-b border-slate-800 pb-1">
-              2. הגדרות תמכור ועמלת סוחר ברירת מחדל:
-            </span>
-
-            <div>
-              <label className="block text-slate-400 mb-1">עמלת סוחר דיפולטיבית (Margin %):</label>
-              <div className="flex items-center gap-2 mb-2">
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  max="50"
-                  value={formData.defaultMarginPercent}
-                  onChange={(e) => setFormData({ ...formData, defaultMarginPercent: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl py-2 px-3 text-amber-400 font-mono font-bold text-base focus:outline-none"
-                />
-                <span className="text-amber-400 font-bold font-mono text-sm">%</span>
-              </div>
-
-              {/* Presets */}
-              <div className="flex items-center justify-between gap-1.5">
-                {[0, 5, 8, 10, 12, 15, 20].map((preset) => (
-                  <button
-                    key={preset}
-                    type="button"
-                    onClick={() => setFormData({ ...formData, defaultMarginPercent: preset })}
-                    className={`flex-1 py-1 text-[11px] font-bold rounded-lg border transition-all ${
-                      formData.defaultMarginPercent === preset
-                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
-                        : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                    }`}
-                  >
-                    {preset}%
-                  </button>
-                ))}
-              </div>
             </div>
           </div>
 

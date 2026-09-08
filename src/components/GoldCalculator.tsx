@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Eye, EyeOff, Scale, Settings, Check, Image, FileText, ChevronDown } from 'lucide-react';
+import { Plus, Eye, EyeOff, Scale, Settings, Check, Image, FileText, ChevronDown, ExternalLink } from 'lucide-react';
 import { RatesData, GoldItem } from '../types';
 
 interface GoldCalculatorProps {
@@ -46,6 +46,7 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
   const [showDealerPrivate, setShowDealerPrivate] = useState<boolean>(true);
   const [itemPhotoUrl, setItemPhotoUrl] = useState<string>('');
   const [addedSuccessAnim, setAddedSuccessAnim] = useState<boolean>(false);
+  const [showMarginPanel, setShowMarginPanel] = useState<boolean>(false);
 
   // Sync margin when default changes
   useEffect(() => {
@@ -151,17 +152,22 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {onOpenSettings && (
-            <button
-              onClick={onOpenSettings}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-300 transition-all"
-            >
-              <Settings className="w-3.5 h-3.5 text-amber-400" />
-              <span>עמלה: <strong className="text-amber-400">{marginPercent}%</strong></span>
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => setShowMarginPanel(!showMarginPanel)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium border transition-all ${
+              showMarginPanel
+                ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold shadow-md'
+                : 'bg-slate-800/80 hover:bg-slate-800 border-slate-700 text-slate-300'
+            }`}
+            title="לחץ לשינוי מהיר של עמלת הסוחר"
+          >
+            <Settings className="w-3.5 h-3.5 text-amber-400" />
+            <span>עמלה: <strong className={showMarginPanel ? 'text-slate-950 font-black' : 'text-amber-400'}>{marginPercent}%</strong></span>
+          </button>
 
           <button
+            type="button"
             onClick={() => setShowDealerPrivate(!showDealerPrivate)}
             className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold border transition-all ${
               showDealerPrivate
@@ -175,6 +181,83 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Quick Inline Dealer Margin Adjuster Panel */}
+      {showMarginPanel && (
+        <div className="mb-4 p-3.5 bg-slate-950 border border-amber-500/40 rounded-2xl shadow-xl space-y-3 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+            <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+              <Settings className="w-3.5 h-3.5 text-amber-400" />
+              <span>התאמת עמלת סוחר לפריט זה:</span>
+            </span>
+            <div className="flex items-center gap-2">
+              {onOpenSettings && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowMarginPanel(false);
+                    onOpenSettings();
+                  }}
+                  className="text-[11px] text-amber-400 hover:text-amber-300 underline flex items-center gap-1 font-bold"
+                  title="עבור להגדרות סוחר ראשיות (קביעת עמלת קבע ועסק)"
+                >
+                  <span>הגדרות עסק קבועות</span>
+                  <ExternalLink className="w-3 h-3" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowMarginPanel(false)}
+                className="text-slate-400 hover:text-white text-xs px-2 py-0.5 rounded-lg bg-slate-800"
+              >
+                סגור ✕
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setMarginPercent((m) => Math.max(0, Number((m - 0.5).toFixed(1))))}
+              className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-lg flex items-center justify-center border border-slate-700 active:scale-95 transition-all"
+            >
+              -
+            </button>
+            <div className="flex-1 text-center bg-slate-900 border border-slate-700 rounded-xl py-1.5 shadow-inner">
+              <span className="text-2xl font-black font-mono text-amber-300">{marginPercent}%</span>
+              <span className="text-[10px] text-slate-400 block">עמלת סוחר מנוכה מהספוט</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMarginPercent((m) => Math.min(50, Number((m + 0.5).toFixed(1))))}
+              className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-black text-lg flex items-center justify-center border border-slate-700 active:scale-95 transition-all"
+            >
+              +
+            </button>
+          </div>
+
+          {/* Quick Margin Preset Pills */}
+          <div className="space-y-1">
+            <span className="text-[10px] text-slate-400 block">בחירה בלחיצה אחת:</span>
+            <div className="grid grid-cols-7 gap-1">
+              {[0, 5, 8, 10, 12, 15, 20].map((val) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setMarginPercent(val)}
+                  className={`py-1 rounded-lg text-xs font-bold transition-all border ${
+                    marginPercent === val
+                      ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md'
+                      : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white hover:border-slate-700'
+                  }`}
+                >
+                  {val}%
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-4">
         {/* Karat & Item Type Selection - Clean mobile dropdowns */}

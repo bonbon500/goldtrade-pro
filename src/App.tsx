@@ -13,7 +13,7 @@ import { DealerDashboard } from './components/DealerDashboard';
 import { PostItemChoiceModal } from './components/PostItemChoiceModal';
 import { AddItemModal } from './components/AddItemModal';
 import { TradeItem, RatesData, CartTotals, TradeDeal, BusinessSettings, GoldItem, DiamondItem, ItemCategory } from './types';
-import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail, Edit3 } from 'lucide-react';
+import { Coins, User, Phone, FileText, ArrowRight, ArrowLeft, Check, Plus, Trash2, Send, Save, BookUser, ShoppingBag, ExternalLink, RefreshCw, CheckCircle2, LayoutDashboard, Gem, Home, Mail, Edit3, Settings } from 'lucide-react';
 import { getLiveGoldAndFxRates, getCachedGoldRates } from './utils/goldRates';
 
 const DEFAULT_SETTINGS: BusinessSettings = {
@@ -449,7 +449,7 @@ ${settings.dealerName} | ${settings.phone}`;
         <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2.5 shadow-xl flex items-center justify-between text-xs font-bold sticky top-14 sm:top-16 z-40 border-b border-amber-600">
           <div className="flex items-center gap-2">
             <span className="text-base animate-bounce">🚀</span>
-            <span>עודכנה גרסה חדשה בשרת (v2.3)! יש לרענן את המכשיר כדי לטעון אותה.</span>
+            <span>עודכנה גרסה חדשה בשרת (v2.4)! יש לרענן את המכשיר כדי לטעון אותה.</span>
           </div>
           <button
             type="button"
@@ -1134,6 +1134,16 @@ ${settings.dealerName} | ${settings.phone}`;
         >
           <CheckCircle2 className="w-5 h-5 mb-0.5 text-amber-500/80" />
           <span className="text-[10px]">עסקאות</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsSettingsOpen(true)}
+          className="flex-1 flex flex-col items-center py-1 rounded-xl text-slate-400 hover:text-amber-300 transition-all"
+          title="הגדרות סוחר ועסק"
+        >
+          <Settings className="w-5 h-5 mb-0.5 text-amber-400/90" />
+          <span className="text-[10px]">הגדרות</span>
         </button>
       </nav>
 

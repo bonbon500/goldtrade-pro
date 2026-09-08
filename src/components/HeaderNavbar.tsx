@@ -51,7 +51,7 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
                   {settings.businessName || 'GoldTrade Pro'}
                 </h1>
                 <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] sm:text-[10px] px-1.5 py-0.2 rounded-full font-bold">
-                  v2.2
+                  v2.4
                 </span>
               </div>
               <p className="text-[10px] sm:text-xs text-slate-400 font-normal truncate max-w-[140px] sm:max-w-xs">
@@ -117,10 +117,11 @@ export const HeaderNavbar: React.FC<HeaderNavbarProps> = ({
             <button
               onClick={onOpenSettings}
               id="btn-open-settings"
-              className="flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 rounded-xl transition-all active:scale-95"
-              title="ניהול עסק ומערכת"
+              className="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-750 border border-slate-700 hover:border-amber-500/40 text-slate-200 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold transition-all active:scale-95 shadow-sm"
+              title="הגדרות סוחר ופרטי עסק"
             >
-              <Settings className="w-4 h-4 text-slate-300" />
+              <Settings className="w-4 h-4 text-amber-400" />
+              <span className="text-[11px] sm:text-xs">הגדרות</span>
             </button>
           </div>
         </div>
