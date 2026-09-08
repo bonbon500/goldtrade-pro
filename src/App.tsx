@@ -521,12 +521,6 @@ ${settings.dealerName} | ${settings.phone}`;
                   if (category) setActiveCalcCategory(category);
                   setActiveStep(1);
                 }}
-                onUpdateDefaultMargin={(newMargin) => {
-                  const updated = { ...settings, defaultMarginPercent: newMargin };
-                  setSettings(updated);
-                  localStorage.setItem('goldtrade_settings', JSON.stringify(updated));
-                  setDealMarginPercent(newMargin);
-                }}
                 onOpenRatesModal={() => setIsRatesModalOpen(true)}
                 onOpenSettings={() => setIsSettingsOpen(true)}
               />

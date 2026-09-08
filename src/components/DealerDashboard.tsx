@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { Coins, Gem, ArrowLeft, ExternalLink, Percent, Check } from 'lucide-react';
+import { Coins, Gem, ArrowLeft, ExternalLink, Check } from 'lucide-react';
 import { RatesData, BusinessSettings } from '../types';
 
 interface DealerDashboardProps {
   settings: BusinessSettings;
   rates: RatesData | null;
   onStartNewDeal: (category: 'gold' | 'diamond') => void;
-  onUpdateDefaultMargin: (newMargin: number) => void;
   onOpenRatesModal: () => void;
   onOpenSettings: () => void;
 }
@@ -15,22 +14,11 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
   settings,
   rates,
   onStartNewDeal,
-  onUpdateDefaultMargin,
   onOpenRatesModal,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState<'gold' | 'diamond'>('gold');
-  const [marginInput, setMarginInput] = useState<number>(settings.defaultMarginPercent);
-  const [marginSavedAnim, setMarginSavedAnim] = useState<boolean>(false);
 
   const gold24k = rates?.gold24kPerGramIls || 315.2;
-
-  const handleMarginChange = (val: number) => {
-    const cleanVal = Math.max(0, Math.min(50, Number(val.toFixed(1))));
-    setMarginInput(cleanVal);
-    onUpdateDefaultMargin(cleanVal);
-    setMarginSavedAnim(true);
-    setTimeout(() => setMarginSavedAnim(false), 1200);
-  };
 
   return (
     <div className="space-y-4 dir-rtl max-w-2xl mx-auto pb-10">
@@ -117,82 +105,7 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
         </div>
       </div>
 
-      {/* 2. Dealer Default Margin Input */}
-      <div className="bg-slate-900 border border-amber-500/30 rounded-2xl p-4 shadow-xl space-y-3">
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-2">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-              <Percent className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                <span>עמלת סוחר ברירת מחדל</span>
-                {marginSavedAnim && (
-                  <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 px-2 py-0.5 rounded-full font-bold flex items-center gap-1 animate-in fade-in duration-200">
-                    <Check className="w-3 h-3 stroke-[3]" />
-                    <span>נשמר!</span>
-                  </span>
-                )}
-              </h3>
-              <p className="text-[10px] text-slate-400">מוגדרת כברירת מחדל לכל העסקאות (ניתן לעדכן גם ספציפית בתוך העסקה)</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Adjuster controls */}
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => handleMarginChange(marginInput - 0.5)}
-            className="w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xl flex items-center justify-center border border-slate-700 transition-all shadow"
-            title="הפחת עמלה ב-0.5%"
-          >
-            -
-          </button>
-
-          <div className="flex-1 bg-slate-950 border border-slate-700 focus-within:border-amber-400 rounded-xl py-1.5 px-3 text-center shadow-inner flex items-center justify-center gap-1.5">
-            <input
-              type="number"
-              step="0.5"
-              min="0"
-              max="50"
-              value={marginInput}
-              onChange={(e) => handleMarginChange(parseFloat(e.target.value) || 0)}
-              className="bg-transparent text-2xl font-black font-mono text-amber-300 text-center w-24 focus:outline-none"
-            />
-            <span className="text-amber-400 font-bold font-mono text-xl">%</span>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => handleMarginChange(marginInput + 0.5)}
-            className="w-11 h-11 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-black text-xl flex items-center justify-center border border-slate-700 transition-all shadow"
-            title="הוסף עמלה ב-0.5%"
-          >
-            +
-          </button>
-        </div>
-
-        {/* Presets */}
-        <div className="grid grid-cols-7 gap-1.5 pt-1">
-          {[0, 5, 8, 10, 12, 15, 20].map((preset) => (
-            <button
-              key={preset}
-              type="button"
-              onClick={() => handleMarginChange(preset)}
-              className={`py-1.5 rounded-xl text-xs font-bold transition-all border ${
-                marginInput === preset
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md scale-[1.02]'
-                  : 'bg-slate-950 hover:bg-slate-800 text-slate-300 border-slate-800'
-              }`}
-            >
-              {preset}%
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* 3. Deal Selection in a Scroll Window */}
+      {/* 2. Deal Selection in a Scroll Window */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
         <div className="border-b border-slate-800/80 pb-2">
           <h3 className="text-xs sm:text-sm font-bold text-slate-200">בחר סוג עסקה חדשה:</h3>
@@ -228,7 +141,7 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
                   </span>
                 </div>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  שקילת זהב לפי קראט, חישוב ספוט בלייב בקיזוז עמלת הסוחר ({marginInput}%).
+                  שקילת זהב לפי קראט, חישוב ספוט בלייב וקיזוז עמלת סוחר.
                 </p>
               </div>
             </div>
