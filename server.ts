@@ -216,7 +216,7 @@ async function updateRatesEngine() {
 updateRatesEngine();
 setInterval(updateRatesEngine, 10000);
 
-const APP_VERSION = '2.5.0';
+const APP_VERSION = '2.6.0';
 const SERVER_START_TIME = new Date().toISOString();
 
 // 1. Live Gold & Exchange Rates API endpoint

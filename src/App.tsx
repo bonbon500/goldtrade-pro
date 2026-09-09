@@ -493,7 +493,7 @@ ${settings.dealerName} | ${settings.phone}`;
         <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 px-4 py-2.5 shadow-xl flex items-center justify-between text-xs font-bold sticky top-14 sm:top-16 z-40 border-b border-amber-600">
           <div className="flex items-center gap-2">
             <span className="text-base animate-bounce">🚀</span>
-            <span>עודכנה גרסה חדשה בשרת (v2.4)! יש לרענן את המכשיר כדי לטעון אותה.</span>
+            <span>עודכנה גרסה חדשה בשרת (v2.6)! יש לרענן את המכשיר כדי לטעון אותה.</span>
           </div>
           <button
             type="button"
