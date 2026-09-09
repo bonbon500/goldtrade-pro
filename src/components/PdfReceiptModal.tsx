@@ -169,6 +169,44 @@ ${settings.businessName} - ${settings.address}`;
     window.open(mailtoUrl, '_blank');
   };
 
+  // Helper to ensure logos and item images never explode in size during canvas rendering
+  const sanitizeImagesForCanvas = (clonedDoc: Document) => {
+    try {
+      const logos = clonedDoc.querySelectorAll('img.logo-img, img[alt*="לוגו"]');
+      logos.forEach((el: any) => {
+        el.style.maxHeight = '50px';
+        el.style.maxWidth = '130px';
+        el.style.width = 'auto';
+        el.style.height = 'auto';
+        el.style.objectFit = 'contain';
+        el.style.display = 'block';
+      });
+
+      const thumbs = clonedDoc.querySelectorAll('img.item-photo-thumb');
+      thumbs.forEach((el: any) => {
+        el.style.width = '44px';
+        el.style.height = '44px';
+        el.style.minWidth = '44px';
+        el.style.minHeight = '44px';
+        el.style.maxWidth = '44px';
+        el.style.maxHeight = '44px';
+        el.style.objectFit = 'cover';
+        el.style.display = 'block';
+      });
+
+      const annexes = clonedDoc.querySelectorAll('img.annex-photo-img');
+      annexes.forEach((el: any) => {
+        el.style.maxHeight = '75px';
+        el.style.height = '75px';
+        el.style.width = '100%';
+        el.style.objectFit = 'cover';
+        el.style.display = 'block';
+      });
+    } catch (e) {
+      console.warn('Canvas image sanitization note:', e);
+    }
+  };
+
   // Copy receipt canvas image to clipboard for easy WhatsApp pasting (Ctrl+V)
   const handleCopyReceiptImage = async () => {
     if (!receiptRef.current) return;
@@ -180,6 +218,7 @@ ${settings.businessName} - ${settings.address}`;
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        onclone: (clonedDoc) => sanitizeImagesForCanvas(clonedDoc),
       });
 
       const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
@@ -210,6 +249,7 @@ ${settings.businessName} - ${settings.address}`;
         allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        onclone: (clonedDoc) => sanitizeImagesForCanvas(clonedDoc),
       });
 
       const dataUrl = canvas.toDataURL('image/png');
@@ -248,6 +288,7 @@ ${settings.businessName} - ${settings.address}`;
         logging: false,
         imageTimeout: 8000,
         windowWidth: 800,
+        onclone: (clonedDoc) => sanitizeImagesForCanvas(clonedDoc),
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
@@ -530,11 +571,12 @@ ${settings.businessName} - ${settings.address}`;
                 {/* Mobile Header */}
                 <div className="text-center border-b-2 border-amber-500 pb-3.5">
                   {settings.logoUrl && (
-                    <div className="flex justify-center mb-2">
+                    <div className="flex justify-center mb-2" style={{ maxHeight: '55px', overflow: 'hidden' }}>
                       <img
                         src={settings.logoUrl}
                         alt={settings.businessName || 'לוגו עסק'}
-                        className="max-h-16 max-w-[140px] object-contain rounded-lg border border-slate-200 p-1 bg-white shadow-sm"
+                        style={{ maxHeight: '50px', maxWidth: '130px', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }}
+                        className="logo-img max-h-14 max-w-[130px] object-contain rounded-lg border border-slate-200 p-1 bg-white shadow-sm"
                       />
                     </div>
                   )}
@@ -615,12 +657,14 @@ ${settings.businessName} - ${settings.address}`;
                       >
                         <div className="flex items-center gap-2.5">
                           {includeItemPhotos && item.itemPhotoUrl && (
-                            <img
-                              src={item.itemPhotoUrl}
-                              alt={item.name}
-                              style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', objectFit: 'cover' }}
-                              className="w-12 h-12 rounded-lg object-cover border border-amber-400 shrink-0"
-                            />
+                            <div style={{ width: '44px', height: '44px', minWidth: '44px', minHeight: '44px', maxWidth: '44px', maxHeight: '44px', overflow: 'hidden', borderRadius: '8px' }} className="shrink-0 border border-amber-400 bg-white">
+                              <img
+                                src={item.itemPhotoUrl}
+                                alt={item.name}
+                                style={{ width: '44px', height: '44px', minWidth: '44px', minHeight: '44px', maxWidth: '44px', maxHeight: '44px', objectFit: 'cover', display: 'block' }}
+                                className="item-photo-thumb w-11 h-11 rounded-lg object-cover"
+                              />
+                            </div>
                           )}
                           <div>
                             <div className="flex items-center gap-1.5 flex-wrap">
@@ -677,11 +721,14 @@ ${settings.businessName} - ${settings.address}`;
                       {cart.map((item, idx) =>
                         item.itemPhotoUrl ? (
                           <div key={item.id} className="bg-white p-1 rounded-lg border border-slate-200 text-center">
-                            <img
-                              src={item.itemPhotoUrl}
-                              alt={item.name}
-                              className="w-full h-16 object-cover rounded-md mb-1"
-                            />
+                            <div style={{ width: '100%', height: '65px', maxHeight: '65px', overflow: 'hidden', borderRadius: '6px' }} className="mb-1 border border-slate-200 bg-slate-100">
+                              <img
+                                src={item.itemPhotoUrl}
+                                alt={item.name}
+                                style={{ width: '100%', height: '65px', maxHeight: '65px', objectFit: 'cover', display: 'block' }}
+                                className="annex-photo-img w-full h-16 object-cover rounded-md"
+                              />
+                            </div>
                             <span className="text-[9px] font-bold text-slate-800 block truncate">#{idx + 1} {item.name}</span>
                           </div>
                         ) : null
@@ -737,11 +784,14 @@ ${settings.businessName} - ${settings.address}`;
             <div className="flex items-start justify-between border-b-2 border-amber-500 pb-4 mb-6">
               <div className="flex items-start gap-3.5">
                 {settings.logoUrl && (
-                  <img
-                    src={settings.logoUrl}
-                    alt={settings.businessName || 'לוגו עסק'}
-                    className="max-h-16 max-w-[120px] object-contain rounded border border-slate-200 p-1 bg-white"
-                  />
+                  <div style={{ maxHeight: '55px', maxWidth: '120px', overflow: 'hidden', display: 'flex', alignItems: 'center' }} className="rounded border border-slate-200 p-1 bg-white">
+                    <img
+                      src={settings.logoUrl}
+                      alt={settings.businessName || 'לוגו עסק'}
+                      style={{ maxHeight: '50px', maxWidth: '115px', width: 'auto', height: 'auto', objectFit: 'contain', display: 'block' }}
+                      className="logo-img max-h-12 max-w-[115px] object-contain"
+                    />
+                  </div>
                 )}
                 <div>
                   <h1 className="text-2xl font-black text-amber-700 tracking-tight">
@@ -832,12 +882,14 @@ ${settings.businessName} - ${settings.address}`;
                         <td className="py-2.5 px-3 font-semibold">
                           <div className="flex items-center gap-2.5">
                             {includeItemPhotos && item.itemPhotoUrl && (
-                              <img
-                                src={item.itemPhotoUrl}
-                                alt={item.name}
-                                style={{ width: '48px', height: '48px', minWidth: '48px', minHeight: '48px', maxWidth: '48px', maxHeight: '48px', objectFit: 'cover' }}
-                                className="w-12 h-12 rounded-lg object-cover border-2 border-amber-400/80 shadow-sm shrink-0"
-                              />
+                              <div style={{ width: '44px', height: '44px', minWidth: '44px', minHeight: '44px', maxWidth: '44px', maxHeight: '44px', overflow: 'hidden', borderRadius: '8px' }} className="shrink-0 border-2 border-amber-400/80 shadow-sm bg-white">
+                                <img
+                                  src={item.itemPhotoUrl}
+                                  alt={item.name}
+                                  style={{ width: '44px', height: '44px', minWidth: '44px', minHeight: '44px', maxWidth: '44px', maxHeight: '44px', objectFit: 'cover', display: 'block' }}
+                                  className="item-photo-thumb w-11 h-11 rounded-lg object-cover"
+                                />
+                              </div>
                             )}
                             <div>
                               <div className="font-bold text-slate-900">{item.name}</div>
@@ -902,12 +954,12 @@ ${settings.businessName} - ${settings.address}`;
                   {cart.map((item, idx) =>
                     item.itemPhotoUrl ? (
                       <div key={item.id} className="bg-white p-2 rounded-lg border border-slate-200 text-center shadow-sm">
-                        <div style={{ width: '100%', height: '96px', overflow: 'hidden', borderRadius: '6px' }} className="mb-1.5 border border-slate-200">
+                        <div style={{ width: '100%', height: '75px', maxHeight: '75px', overflow: 'hidden', borderRadius: '6px' }} className="mb-1.5 border border-slate-200 bg-slate-100">
                           <img
                             src={item.itemPhotoUrl}
                             alt={item.name}
-                            style={{ width: '100%', height: '96px', maxHeight: '96px', objectFit: 'cover', display: 'block' }}
-                            className="w-full h-24 object-cover rounded-md"
+                            style={{ width: '100%', height: '75px', maxHeight: '75px', objectFit: 'cover', display: 'block' }}
+                            className="annex-photo-img w-full h-20 object-cover rounded-md"
                           />
                         </div>
                         <span className="text-[11px] font-bold text-slate-900 block truncate">

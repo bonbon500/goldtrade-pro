@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Eye, EyeOff, Scale, Settings, Check, Image, FileText, ChevronDown, ExternalLink } from 'lucide-react';
+import { Plus, Eye, EyeOff, Scale, Settings, Check, Image, FileText, ChevronDown, ExternalLink, Trash2, Camera } from 'lucide-react';
 import { RatesData, GoldItem } from '../types';
 
 interface GoldCalculatorProps {
@@ -416,17 +416,52 @@ export const GoldCalculator: React.FC<GoldCalculatorProps> = ({
           </div>
 
           <div className="flex items-end">
-            <label className="w-full cursor-pointer flex items-center justify-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 bg-slate-950 border border-slate-800 py-2 px-3 rounded-xl transition-all">
-              <Image className="w-3.5 h-3.5" />
-              <span>{itemPhotoUrl ? 'שנה תמונת פריט' : 'צופף תמונת פריט'}</span>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </label>
+            {itemPhotoUrl ? (
+              <div className="w-full flex items-center justify-between gap-2 bg-slate-950 border border-amber-500/40 py-1.5 px-2.5 rounded-xl shadow-sm">
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <img
+                    src={itemPhotoUrl}
+                    alt="תמונת פריט"
+                    className="w-8 h-8 rounded-lg object-cover border border-amber-400 shrink-0"
+                  />
+                  <span className="text-[11px] text-amber-300 font-bold truncate">תמונה צורפה ✓</span>
+                </div>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <label className="cursor-pointer text-[11px] text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 py-1 px-2 rounded-lg transition-all">
+                    <span>החלף</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                  </label>
+
+                  <button
+                    type="button"
+                    onClick={() => setItemPhotoUrl('')}
+                    className="p-1 rounded-lg bg-red-500/15 hover:bg-red-500/30 text-red-400 border border-red-500/30 transition-all"
+                    title="מחק תמונה זו"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="w-full cursor-pointer flex items-center justify-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 bg-slate-950 border border-slate-800 hover:border-amber-500/40 py-2 px-3 rounded-xl transition-all">
+                <Camera className="w-3.5 h-3.5 text-amber-400" />
+                <span>צלם / צרף תמונת פריט</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
         </div>
 

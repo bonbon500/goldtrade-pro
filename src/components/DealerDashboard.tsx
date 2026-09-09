@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Coins, Gem, ArrowLeft, ExternalLink, Check } from 'lucide-react';
+import { Coins, Gem, ArrowLeft, ExternalLink } from 'lucide-react';
 import { RatesData, BusinessSettings } from '../types';
 
 interface DealerDashboardProps {
@@ -105,111 +105,51 @@ export const DealerDashboard: React.FC<DealerDashboardProps> = ({
         </div>
       </div>
 
-      {/* 2. Deal Selection in a Scroll Window */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
-        <div className="border-b border-slate-800/80 pb-2">
-          <h3 className="text-xs sm:text-sm font-bold text-slate-200">בחר סוג עסקה חדשה:</h3>
-          <p className="text-[11px] text-slate-400">גלול ובחר את סוג הפריטים בעסקה</p>
+      {/* 2. Compact Deal Selection - Single Row / Dropdown Window */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3 sm:p-4 shadow-xl space-y-2.5">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+            <span>בחר סוג עסקה:</span>
+          </span>
+          <span className="text-[11px] text-slate-400">
+            {selectedCategory === 'gold' ? '24K, 18K, 14K, 9K (ספוט בלייב)' : 'B2B סוחרים / אדם פרטי'}
+          </span>
         </div>
 
-        {/* Scrollable Deal Type Picker Window */}
-        <div className="max-h-56 overflow-y-auto space-y-2.5 p-1 no-scrollbar">
-          {/* Option A: Gold Deal */}
-          <div
-            onClick={() => setSelectedCategory('gold')}
-            className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-              selectedCategory === 'gold'
-                ? 'bg-amber-500/15 border-amber-500/60 shadow-lg shadow-amber-500/10'
-                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div className={`p-2.5 rounded-xl border ${
-                selectedCategory === 'gold'
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold'
-                  : 'bg-slate-900 text-amber-400 border-slate-800'
-              }`}>
-                <Coins className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-black ${selectedCategory === 'gold' ? 'text-amber-300' : 'text-white'}`}>
-                    🪙 עסקת זהב
-                  </span>
-                  <span className="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full font-bold">
-                    24K / 18K / 14K / 9K
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  שקילת זהב לפי קראט, חישוב ספוט בלייב וקיזוז עמלת סוחר.
-                </p>
-              </div>
+        {/* Single Row: Selection Dropdown & Start Button */}
+        <div className="flex items-center gap-2">
+          <div className="flex-1 relative bg-slate-950 border border-slate-800 hover:border-slate-700 rounded-xl transition-all">
+            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-base">
+              {selectedCategory === 'gold' ? '🪙' : '💎'}
             </div>
-
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-              selectedCategory === 'gold'
-                ? 'border-amber-400 bg-amber-500 text-slate-950'
-                : 'border-slate-700 bg-slate-900'
-            }`}>
-              {selectedCategory === 'gold' && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-            </div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value as 'gold' | 'diamond')}
+              aria-label="בחר סוג עסקה"
+              className="w-full bg-transparent text-white font-black text-xs sm:text-sm py-2.5 pr-9 pl-4 appearance-none focus:outline-none cursor-pointer"
+            >
+              <option value="gold" className="bg-slate-900 text-amber-300 font-bold">
+                🪙 עסקת זהב (קראט וספוט חי)
+              </option>
+              <option value="diamond" className="bg-slate-900 text-cyan-300 font-bold">
+                💎 עסקת יהלומים ותכשיטים (B2B / פרטי)
+              </option>
+            </select>
           </div>
 
-          {/* Option B: Diamond Deal */}
-          <div
-            onClick={() => setSelectedCategory('diamond')}
-            className={`p-3.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
-              selectedCategory === 'diamond'
-                ? 'bg-cyan-500/15 border-cyan-500/60 shadow-lg shadow-cyan-500/10'
-                : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+          <button
+            type="button"
+            onClick={() => onStartNewDeal(selectedCategory)}
+            className={`py-2.5 px-4 sm:px-6 rounded-xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-lg active:scale-[0.98] shrink-0 ${
+              selectedCategory === 'gold'
+                ? 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-amber-500/20'
+                : 'bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/20'
             }`}
           >
-            <div className="flex items-center gap-3">
-              <div className={`p-2.5 rounded-xl border ${
-                selectedCategory === 'diamond'
-                  ? 'bg-cyan-500 text-slate-950 border-cyan-400 font-bold'
-                  : 'bg-slate-900 text-cyan-400 border-slate-800'
-              }`}>
-                <Gem className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-black ${selectedCategory === 'diamond' ? 'text-cyan-300' : 'text-white'}`}>
-                    💎 עסקת יהלומים ותכשיטים
-                  </span>
-                  <span className="text-[10px] bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-full font-bold">
-                    B2B &bull; אדם פרטי
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  תמחור רפפורט לסוחרים, קנייה מאדם פרטי או חבילות (פאקע).
-                </p>
-              </div>
-            </div>
-
-            <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-              selectedCategory === 'diamond'
-                ? 'border-cyan-400 bg-cyan-500 text-slate-950'
-                : 'border-slate-700 bg-slate-900'
-            }`}>
-              {selectedCategory === 'diamond' && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-            </div>
-          </div>
+            <span>התחל עסקה</span>
+            <ArrowLeft className="w-4 h-4 stroke-[3]" />
+          </button>
         </div>
-
-        {/* Primary Action Button: Start Deal */}
-        <button
-          type="button"
-          onClick={() => onStartNewDeal(selectedCategory)}
-          className={`w-full py-4 px-5 rounded-2xl font-black text-sm sm:text-base flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-[0.98] ${
-            selectedCategory === 'gold'
-              ? 'bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 shadow-amber-500/25 border border-amber-300/40'
-              : 'bg-gradient-to-r from-cyan-500 via-blue-600 to-amber-500 hover:from-cyan-400 hover:to-amber-400 text-slate-950 shadow-cyan-500/25 border border-cyan-300/40'
-          }`}
-        >
-          <span>התחל {selectedCategory === 'gold' ? 'עסקת זהב' : 'עסקת יהלומים'}</span>
-          <ArrowLeft className="w-5 h-5 stroke-[3]" />
-        </button>
       </div>
     </div>
   );

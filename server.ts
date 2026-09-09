@@ -38,115 +38,134 @@ async function updateRatesEngine() {
   try {
     let xauUsd = cachedRatesResponse?.data?.xauUsd || 4478.60;
     let usdIls = cachedRatesResponse?.data?.usdIls || 3.0053;
-    let sourceGold = 'Investing.com (ספוט XAU/USD)';
-    let sourceFx = 'Investing.com (USD/ILS רציף)';
+    let sourceGold = cachedRatesResponse?.data?.sources?.gold || 'Coinbase ספוט זהב (XAU/USD)';
+    let sourceFx = cachedRatesResponse?.data?.sources?.fx || 'שער דולר רציף';
 
-    // 1. Fetch real-time USD/ILS from Investing.com / Yahoo Finance / Bank of Israel
-    let fxFetched = false;
-    try {
-      const jinaFxRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/usd-ils', {
-        headers: { 'User-Agent': 'Mozilla/5.0' },
-        signal: AbortSignal.timeout(4000)
-      });
-      if (jinaFxRes.ok) {
-        const text = await jinaFxRes.text();
-        const match = text.match(/USD ILS\) - במדור זה ניתן למצוא את השער \(?([0-9]+\.[0-9]+)\)?/) || text.match(/שער \(?([0-9]+\.[0-9]{3,4})\)?/);
-        if (match && match[1]) {
-          const parsed = parseFloat(match[1]);
-          if (!isNaN(parsed) && parsed > 1.5 && parsed < 6) {
-            usdIls = Number(parsed.toFixed(4));
-            sourceFx = 'Investing.com (USD/ILS רציף)';
-            fxFetched = true;
-          }
-        }
-      }
-    } catch {}
-
-    if (!fxFetched) {
+    // Parallel concurrent fetch of FX and Gold rates
+    const fetchFxPromise = (async () => {
+      // Priority 1: Yahoo Finance API (sub-100ms)
       try {
         const yFxRes = await fetch('https://query1.finance.yahoo.com/v8/finance/chart/USDILS=X?interval=1m&range=1d', {
           headers: { 'User-Agent': 'Mozilla/5.0' },
-          signal: AbortSignal.timeout(3000)
+          signal: AbortSignal.timeout(2500)
         });
         if (yFxRes.ok) {
           const yFxData = await yFxRes.json();
           const price = yFxData?.chart?.result?.[0]?.meta?.regularMarketPrice;
-          if (price && typeof price === 'number') {
+          if (price && typeof price === 'number' && price > 1.5 && price < 6) {
             usdIls = Number(price.toFixed(4));
-            sourceFx = 'Investing.com / Yahoo Finance (לייב)';
-            fxFetched = true;
+            sourceFx = 'Yahoo Finance (USD/ILS רציף)';
+            return;
           }
         }
       } catch {}
-    }
 
-    if (!fxFetched) {
+      // Priority 2: Bank of Israel official rate
       try {
-        const boiRes = await fetch('https://boi.org.il/PublicApi/GetExchangeRates', { signal: AbortSignal.timeout(3000) });
+        const boiRes = await fetch('https://boi.org.il/PublicApi/GetExchangeRates', { signal: AbortSignal.timeout(2500) });
         if (boiRes.ok) {
           const boiData = await boiRes.json();
           const usdRate = boiData?.exchangeRates?.find((r: any) => r.key === 'USD');
           if (usdRate && usdRate.currentExchangeRate) {
             usdIls = Number(usdRate.currentExchangeRate);
             sourceFx = 'בנק ישראל (רשמי)';
-            fxFetched = true;
+            return;
           }
         }
       } catch {}
-    }
 
-    // 2. Fetch Spot Gold (XAU/USD) - Real-time live physical spot feed (Exact match to Investing.com)
-    let goldFetched = false;
-    // Source A: Coinbase Physical Spot Gold (1:1 LBMA standard - fastest sub-second live spot tick)
-    try {
-      const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot', { signal: AbortSignal.timeout(3000) });
-      if (cbRes.ok) {
-        const cbData = await cbRes.json();
-        if (cbData?.data?.amount) {
-          xauUsd = parseFloat(Number(cbData.data.amount).toFixed(2));
-          sourceGold = 'Investing.com / Coinbase ספוט זהב (XAU/USD)';
-          goldFetched = true;
-        }
-      }
-    } catch {}
-
-    // Source B: Binance PAXG Live Spot
-    if (!goldFetched) {
+      // Priority 3: Open ER-API
       try {
-        const binanceRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', { signal: AbortSignal.timeout(3000) });
+        const erRes = await fetch('https://open.er-api.com/v6/latest/USD', { signal: AbortSignal.timeout(2500) });
+        if (erRes.ok) {
+          const erData = await erRes.json();
+          if (erData?.rates?.ILS) {
+            usdIls = Number(Number(erData.rates.ILS).toFixed(4));
+            sourceFx = 'Open ER-API (USD/ILS)';
+            return;
+          }
+        }
+      } catch {}
+
+      // Fallback 4: Jina scraper
+      try {
+        const jinaFxRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/usd-ils', {
+          headers: { 'User-Agent': 'Mozilla/5.0' },
+          signal: AbortSignal.timeout(3000)
+        });
+        if (jinaFxRes.ok) {
+          const text = await jinaFxRes.text();
+          const match = text.match(/USD ILS\) - במדור זה ניתן למצוא את השער \(?([0-9]+\.[0-9]+)\)?/) || text.match(/שער \(?([0-9]+\.[0-9]{3,4})\)?/);
+          if (match && match[1]) {
+            const parsed = parseFloat(match[1]);
+            if (!isNaN(parsed) && parsed > 1.5 && parsed < 6) {
+              usdIls = Number(parsed.toFixed(4));
+              sourceFx = 'Investing.com (USD/ILS רציף)';
+            }
+          }
+        }
+      } catch {}
+    })();
+
+    const fetchGoldPromise = (async () => {
+      // Priority 1: Coinbase Physical Spot Gold (sub-100ms)
+      try {
+        const cbRes = await fetch('https://api.coinbase.com/v2/prices/PAXG-USD/spot', { signal: AbortSignal.timeout(2500) });
+        if (cbRes.ok) {
+          const cbData = await cbRes.json();
+          if (cbData?.data?.amount) {
+            xauUsd = parseFloat(Number(cbData.data.amount).toFixed(2));
+            sourceGold = 'Investing.com / Coinbase ספוט זהב (XAU/USD)';
+            return;
+          }
+        }
+      } catch {}
+
+      // Priority 2: Binance PAXG Spot
+      try {
+        const binanceRes = await fetch('https://api.binance.com/api/v3/ticker/price?symbol=PAXGUSDT', { signal: AbortSignal.timeout(2500) });
         if (binanceRes.ok) {
           const binData = await binanceRes.json();
           if (binData?.price) {
             xauUsd = parseFloat(Number(binData.price).toFixed(2));
             sourceGold = 'Investing.com / Binance ספוט זהב';
-            goldFetched = true;
+            return;
           }
         }
       } catch {}
-    }
 
-    // Source C: Kraken Live Spot
-    if (!goldFetched) {
+      // Priority 3: Gold-API
       try {
-        const krakenRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD', { signal: AbortSignal.timeout(3000) });
+        const gRes = await fetch('https://api.gold-api.com/price/XAU', { signal: AbortSignal.timeout(2500) });
+        if (gRes.ok) {
+          const gData = await gRes.json();
+          if (gData?.price) {
+            xauUsd = parseFloat(Number(gData.price).toFixed(2));
+            sourceGold = 'Gold-API ספוט זהב (XAU/USD)';
+            return;
+          }
+        }
+      } catch {}
+
+      // Priority 4: Kraken Spot
+      try {
+        const krakenRes = await fetch('https://api.kraken.com/0/public/Ticker?pair=PAXGUSD', { signal: AbortSignal.timeout(2500) });
         if (krakenRes.ok) {
           const krakenData = await krakenRes.json();
           const price = krakenData?.result?.PAXGUSD?.c?.[0];
           if (price) {
             xauUsd = parseFloat(Number(price).toFixed(2));
             sourceGold = 'Kraken ספוט זהב (XAU/USD)';
-            goldFetched = true;
+            return;
           }
         }
       } catch {}
-    }
 
-    // Fallback D: Jina Investing Markdown parser
-    if (!goldFetched) {
+      // Fallback 5: Jina Markdown parser
       try {
         const jinaGoldRes = await fetch('https://r.jina.ai/https://il.investing.com/currencies/xau-usd', {
           headers: { 'User-Agent': 'Mozilla/5.0' },
-          signal: AbortSignal.timeout(4000)
+          signal: AbortSignal.timeout(3000)
         });
         if (jinaGoldRes.ok) {
           const text = await jinaGoldRes.text();
@@ -156,12 +175,13 @@ async function updateRatesEngine() {
             if (!isNaN(cleanNum) && cleanNum > 1000) {
               xauUsd = Number(cleanNum.toFixed(2));
               sourceGold = 'Investing.com (ספוט XAU/USD)';
-              goldFetched = true;
             }
           }
         }
       } catch {}
-    }
+    })();
+
+    await Promise.all([fetchFxPromise, fetchGoldPromise]);
 
     const gold24kPerGramUsd = xauUsd / 31.1034768;
     const gold24kPerGramIls = gold24kPerGramUsd * usdIls;
@@ -192,9 +212,9 @@ async function updateRatesEngine() {
   }
 }
 
-// Start background rates updater loop
+// Start background rates updater loop (fast 10-second tick)
 updateRatesEngine();
-setInterval(updateRatesEngine, 15000);
+setInterval(updateRatesEngine, 10000);
 
 const APP_VERSION = '2.5.0';
 const SERVER_START_TIME = new Date().toISOString();

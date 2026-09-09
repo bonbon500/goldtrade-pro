@@ -792,35 +792,6 @@ ${settings.dealerName} | ${settings.phone}`;
                   </div>
                 </div>
 
-                {/* Category Selector Bar: Gold vs Diamond */}
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 shadow-lg flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveCalcCategory('gold')}
-                    className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                      activeCalcCategory === 'gold'
-                        ? 'bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20 font-black'
-                        : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
-                    }`}
-                  >
-                    <Coins className="w-4 h-4" />
-                    <span>🪙 מחשבון עסקאות זהב</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setActiveCalcCategory('diamond')}
-                    className={`flex-1 py-3 px-4 rounded-xl text-xs sm:text-sm font-black transition-all flex items-center justify-center gap-2 ${
-                      activeCalcCategory === 'diamond'
-                        ? 'bg-gradient-to-r from-cyan-500 via-blue-600 to-amber-500 text-slate-950 shadow-lg shadow-cyan-500/20 font-black'
-                        : 'bg-slate-950 text-slate-400 border border-slate-800 hover:text-white'
-                    }`}
-                  >
-                    <Gem className="w-4 h-4" />
-                    <span>💎 מחשבון יהלומים (B2B / אדם פרטי)</span>
-                  </button>
-                </div>
-
                 {/* Render Selected Calculator */}
                 {activeCalcCategory === 'gold' ? (
                   <GoldCalculator
